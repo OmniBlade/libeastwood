@@ -38,9 +38,6 @@ public:
         return _fileEntries.size();
     }
     
-    // If negative, file needs to be truncated
-    int32_t sizediff();
-    
 private:
     void readIndex();
     void readEncryptedIndex();

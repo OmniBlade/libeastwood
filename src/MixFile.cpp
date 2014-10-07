@@ -106,7 +106,62 @@ void MixFile::readIndex()
 
 void MixFile::readEncryptedIndex()
 {
-    throw(FileException(LOG_ERROR, "MixFile", "*.mix", "Encrypted Mix not handled yet."));
+    uint32_t offset = _stream.tellg();
+    Cblowfish blfish;
+    char pblkbuf[8];
+    char keySource[80];
+    char wsKey[56];
+    uint16_t entryCount;
+    uint32_t blockCount;
+    
+    //encrypted mix holds its key in a pubkey encrypted block
+    _stream.read(keySource, 80);
+    get_blowfish_key(reinterpret_cast<uint8_t*>(keySource),
+                     reinterpret_cast<uint8_t*>(wsKey));
+    blfish.set_key(reinterpret_cast<uint8_t*>(wsKey), 56);
+    
+    offset += 80;
+    
+    //we have to decrypt the first block to get the number of entries
+    _stream.read(pblkbuf, 8);
+    blfish.decipher(reinterpret_cast<void*>(pblkbuf), 
+                    reinterpret_cast<void*>(pblkbuf), 8);
+    memcpy(reinterpret_cast<char*>(&entryCount), pblkbuf, 2);
+    
+    /* To workout size of our header and how much we need to decrypt
+     * taking into account 2 bytes left from getting the file count
+     * adding 8 to compensate for block we already decrypted.
+     */
+    blockCount = ((entryCount * 12) - 2) / 8;
+    if (((entryCount * 12) - 2) % 8) blockCount++;
+    offset += blockCount * 8 + 8;
+    
+    char indexBuf[blockCount * 8 + 2];
+    memcpy(indexBuf, pblkbuf + 6 , 2);
+    
+    //loop to decrypt index into index buffer
+    for(int i = 0; i < blockCount; i++) {
+        _stream.read(pblkbuf, 8);
+        blfish.decipher(reinterpret_cast<void*>(pblkbuf), 
+                    reinterpret_cast<void*>(pblkbuf), 8);
+        memcpy(indexBuf + 2 + 8 * i, pblkbuf, 8);
+    }
+    
+    for(uint32_t i = 0; i < entryCount; i++){
+        int32_t fid;
+        uint32_t foffset;
+        uint32_t fsize;
+        
+        memcpy(reinterpret_cast<char*>(&fid), indexBuf + i * 12,
+               sizeof(int32_t));
+        memcpy(reinterpret_cast<char*>(&foffset), indexBuf + 4 + i * 12,
+               sizeof(uint32_t));
+        memcpy(reinterpret_cast<char*>(&fsize), indexBuf + 8 + i * 12,
+               sizeof(uint32_t));
+        foffset += offset;
+        
+        _fileEntries.insert(std::make_pair(fid, FileEntry(foffset, fsize)));
+    }
 }
 
 }

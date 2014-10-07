@@ -5,6 +5,8 @@
 
 typedef uint32_t t_bf_p[18];
 typedef uint32_t t_bf_s[4][256];
+namespace eastwood {
+    
 
 class Cblowfish
 {
@@ -23,5 +25,5 @@ private:
     t_bf_s m_s;
 };
 
+}
 #endif	/* CBLOWFISH_H */
-
