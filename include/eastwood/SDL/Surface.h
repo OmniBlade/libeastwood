@@ -5,6 +5,7 @@
 
 #include "eastwood/StdDef.h"
 #include "eastwood/Decode.h"
+#include "eastwood/Surface.h"
 #include "eastwood/SDL/Palette.h"
 
 namespace eastwood { namespace SDL {
