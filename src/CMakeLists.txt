@@ -8,6 +8,7 @@ SET( LIBEASTWOOD_SRCS
   CnCFileClass.cpp
   CnCStrFile.cpp
   Decode.cpp
+  DecodeClass.cpp
   Dune2File.cpp
   Dune2StrFile.cpp
   EmcFileAssemble.cpp

@@ -14,13 +14,15 @@ namespace eastwood {
 CpsFile::CpsFile(CCFileClass& fclass, Palette palette) :
     Surface(320, 200, 8, palette), _format(UNCOMPRESSED)
 {
-    if(static_cast<uint16_t>(fclass.readle16() + fclass.readle16()) != fclass.getSize())
-	throw(Exception(LOG_ERROR, "CpsFile", "Invalid file size"));
+    LOG_DEBUG("Reading CPS header");
+    if(fclass.readle16() + 2 != fclass.getSize())
+        throw(Exception(LOG_ERROR, "CpsFile", "Invalid file size"));
 
     _format = static_cast<compressionFormat>(fclass.readle16());
     switch(_format) {
 	case UNCOMPRESSED:
 	case FORMAT_80:
+            LOG_DEBUG("Format supported");
 	    break;
 	case FORMAT_LBM:
 	    throw(Exception(LOG_ERROR, "CpsFile", "LBM format support not implemented"));
@@ -30,17 +32,15 @@ CpsFile::CpsFile(CCFileClass& fclass, Palette palette) :
 	    throw(Exception(LOG_ERROR, "CpsFile", error));
     }
 
-    if(fclass.readle16() + fclass.readle16() != _width*_height)
+    if(fclass.readle16() != _width*_height)
 	throw(Exception(LOG_ERROR, "CpsFile", "Invalid image size"));
+    
+    LOG_DEBUG("Validated uncompressed CPS size");
 
-    if(fclass.readle16() == 768){
-	LOG_INFO("CpsFile", "CPS has embedded palette");
-	if(palette)
-            fclass.seek(768, SEEK_CUR);
-	else {
-    	    PalFile pal(fclass);
-    	    _palette = pal.getPalette();
-	}
+    if(fclass.readle32() == 0x03000000){
+	LOG_INFO("CpsFile %s", "CPS has embedded palette");
+        PalFile pal(fclass);
+        _palette = pal.getPalette();
     }
     else if(!_palette)
 	throw(Exception(LOG_ERROR, "CpsFile", "No palette provided as argument or embedded in CPS"));
