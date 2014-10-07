@@ -107,7 +107,7 @@ void PakFile::open(std::string fileName, std::ios::openmode mode)
     } else if(_mode & std::ios_base::out) {
         _fileNames.push_back(fileName);
         _stream.seekg(0, std::ios::end);
-        _fileEntries.insert(make_pair(fileName, FileEntry(static_cast<uint32_t>(_stream.tellg()), 0)));
+        _fileEntries.insert(std::make_pair(fileName, FileEntry(static_cast<uint32_t>(_stream.tellg()), 0)));
         _currentFile = _fileEntries.find(fileName);
         std::ios::init(new std::stringbuf(_mode));
     } else
@@ -212,7 +212,7 @@ void PakFile::readIndex()
         LOG_INFO("PakFile", "Found file %s", name);
 
         size = ((offset = _stream.getU32LE()) != 0 ? offset : _stream.sizeg()) - start;
-        _fileEntries.insert(make_pair(name, FileEntry(start, size)));
+        _fileEntries.insert(std::make_pair(name, FileEntry(start, size)));
         _fileNames.push_back(name);
     }
 }
