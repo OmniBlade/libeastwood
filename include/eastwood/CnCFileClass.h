@@ -72,8 +72,8 @@ public:
     uint16_t readle16();
     uint32_t readle32();
     uint32_t write(const void *buffer, uint32_t length);
-    bool write16(uint16_t value);
-    bool write32(uint32_t value);
+    bool writele16(uint16_t value);
+    bool writele32(uint32_t value);
     bool write8(uint8_t value);
     uint32_t seek(int32_t position, uint8_t mode);
     uint32_t tell();

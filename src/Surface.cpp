@@ -55,11 +55,32 @@ Surface::Surface(uint8_t *buffer, uint16_t width, uint16_t height, uint8_t bpp, 
 
 Surface::Surface(const Surface &surface) :
     _bpp(surface._bpp), _Bpp(surface._Bpp), _width(surface._width), _height(surface._height),
-    _pitch(surface._pitch), _pixels(new uint8_t[surface.size()]), _palette(surface._palette)
+    _pitch(surface._pitch), _pixels(NULL), _palette(surface._palette)
 {
-    if(*this)
-    	memcpy(this->_pixels, surface._pixels, size());
-    LOG_DEBUG("Surface created with bitdepth %d and palette %d", _bpp, _palette.size());
+    _pixels = new uint8_t[surface.size()];
+    for(uint32_t i = 0; i < surface.size(); i++){
+        _pixels[i] = surface._pixels[i];
+    }
+    LOG_DEBUG("New pointer is %p, old is %p", _pixels, surface._pixels);
+}
+
+Surface& Surface::operator=(const Surface &surface)
+{
+    if(this == &surface) return *this;
+    
+    if(_pixels) delete[] _pixels;
+    
+    _bpp = surface._bpp;
+    _Bpp = surface._Bpp;
+    _width = surface._width;
+    _height = surface._height;
+    _pitch = surface._pitch;
+    _palette = surface._palette;
+    
+    _pixels = new uint8_t[surface.size()];
+    for(uint32_t i = 0; i < surface.size(); i++){
+        _pixels[i] = surface._pixels[i];
+    }
 }
 
 Surface::~Surface() {
@@ -105,23 +126,23 @@ bool Surface::saveBMP(CCFileClass& output)
     /* Write the BMP file header values */
     fp_offset = static_cast<uint32_t>(output.tell());
     output.write(header.magic, sizeof(header.magic));
-    output.write32(header.size);
-    output.write16(header.reserved1);
-    output.write16(header.reserved2);
-    output.write32(header.offBits);
+    output.writele32(header.size);
+    output.writele16(header.reserved1);
+    output.writele16(header.reserved2);
+    output.writele32(header.offBits);
 
     /* Write the BMP info values */
-    output.write32(info.size);
-    output.write32(info.width);
-    output.write32(info.height);
-    output.write16(info.planes);
-    output.write16(info.bitCount);
-    output.write32(info.compression);
-    output.write32(info.sizeImage);
-    output.write32(info.xPelsPerMeter);
-    output.write32(info.yPelsPerMeter);
-    output.write32(info.colorsUsed);
-    output.write32(info.colorsImportant);
+    output.writele32(info.size);
+    output.writele32(info.width);
+    output.writele32(info.height);
+    output.writele16(info.planes);
+    output.writele16(info.bitCount);
+    output.writele32(info.compression);
+    output.writele32(info.sizeImage);
+    output.writele32(info.xPelsPerMeter);
+    output.writele32(info.yPelsPerMeter);
+    output.writele32(info.colorsUsed);
+    output.writele32(info.colorsImportant);
 
     /* Write the palette (in BGR color order) */
     if (_palette.size()) {
@@ -137,7 +158,7 @@ bool Surface::saveBMP(CCFileClass& output)
     header.offBits = static_cast<uint32_t>(output.tell())-fp_offset;
     output.seek(fp_offset+10, SEEK_SET);
     
-    output.write32(header.offBits);
+    output.writele32(header.offBits);
     output.seek(fp_offset+header.offBits, SEEK_SET);
 
     /* Write the bitmap image upside down */
@@ -151,7 +172,7 @@ bool Surface::saveBMP(CCFileClass& output)
     /* Write the BMP file size */
     header.size = static_cast<uint32_t>(output.tell())-fp_offset;
     output.seek(fp_offset+2, SEEK_SET);
-    output.write32(header.size);
+    output.writele32(header.size);
     output.seek(fp_offset+header.size, SEEK_SET);
 
     return true;

@@ -514,13 +514,13 @@ uint32_t CCFileClass::write(const void *buffer, uint32_t length)
     return length;
 }
 
-bool CCFileClass::write16(uint16_t value)
+bool CCFileClass::writele16(uint16_t value)
 {
     htole16(value);
     return (write(&value, 2) == 2);
 }
 
-bool CCFileClass::write32(uint32_t value)
+bool CCFileClass::writele32(uint32_t value)
 {
     htole32(value);
     return (write(&value, 4) == 4);

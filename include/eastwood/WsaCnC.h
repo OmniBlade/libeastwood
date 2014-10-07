@@ -19,6 +19,7 @@ public:
 	~WsaCnC();
 
 	Surface getSurface(uint16_t frameNumber) const { return _decodedFrames.at(frameNumber); }
+    Surface& operator[] (uint16_t i) { return _decodedFrames.at(i); }
 
 	uint16_t size() const throw() { return _decodedFrames.size(); };
 	uint32_t getFramesPer1024ms() const throw() { return _framesPer1024ms; };

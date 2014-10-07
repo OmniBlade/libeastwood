@@ -39,7 +39,7 @@ int main(int argc, char** argv)
     WsaCnC wsa(files);
     files.close();
     
-    Surface cps(wsa.getSurface(4));
+    Surface cps(wsa[5]);
     
     //files.open("testing.ini", FILE_MODE_WRITE);
     //inif.SaveChangesTo(files);

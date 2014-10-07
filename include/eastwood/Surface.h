@@ -24,6 +24,8 @@ class Surface {
 	virtual ~Surface();
 
 	Surface(const Surface &surface);
+    
+    Surface& operator=(const Surface &surface);
 
 	virtual operator uint8_t*() const {
 	    return _pixels;
