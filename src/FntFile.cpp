@@ -1,4 +1,4 @@
-#include <iostream>
+//#include <iostream>
 
 #include "eastwood/StdDef.h"
 
@@ -27,7 +27,7 @@ struct FNTHeader
 FntFile::FntFile(CCFileClass& fclass) :
     _characters(), _height(0)
 {
-    IStream &_stream = reinterpret_cast<IStream&>(stream);
+    //IStream &_stream = reinterpret_cast<IStream&>(stream);
     FNTHeader header;
     //fclass.read(reinterpret_cast<uint8_t*>(&header), offsetof(FNTHeader, nchars)/sizeof(uint8_t));
     //_stream.readU16LE(reinterpret_cast<uint16_t*>(&header), offsetof(FNTHeader, nchars)/sizeof(uint16_t));
@@ -54,21 +54,27 @@ FntFile::FntFile(CCFileClass& fclass) :
 
     std::vector<uint16_t> dchar(header.nchars);
 
-    _stream.readU16LE(&dchar.front(), header.nchars);
+    //_stream.readU16LE(&dchar.front(), header.nchars);
+    for(uint32_t i = 0; i < header.nchars; i++) {
+        dchar[i] = fclass.readle16();
+    }
 
     std::vector<uint8_t> wchar(header.nchars);
 
-    _stream.seekg(header.wpos, std::ios::beg);
-    _stream.read(reinterpret_cast<char*>(&wchar.front()), header.nchars);
+    fclass.seek(header.wpos, SEEK_SET);
+    fclass.read(reinterpret_cast<char*>(&wchar.front()), header.nchars);
 
     //if (wchar[0] != 8) LOG(LV_WARNING, "Font", "%d: bad!!", wchar[0]);
 
     std::vector<uint16_t> hchar(dchar.size());
 
-    _stream.seekg(header.hpos, std::ios::beg);
-    _stream.readU16LE(&hchar.front(), header.nchars);
+    fclass.seek(header.hpos, SEEK_SET);
+    //_stream.readU16LE(&hchar.front(), header.nchars);
+    for(uint32_t i = 0; i < header.nchars; i++) {
+        hchar[i] = fclass.readle16();
+    }
 
-    _stream.seekg(header.cdata, std::ios::beg);
+    fclass.seek(header.cdata, SEEK_SET);
 
     _characters.resize(header.nchars);
 
@@ -83,8 +89,8 @@ FntFile::FntFile(CCFileClass& fclass) :
 	_characters[i].y_offset = offset;
 	_characters[i].bitmap.resize(static_cast<uint8_t>(width*height));
 
-	_stream.seekg(dchar[i], std::ios::beg);
-	_stream.read(reinterpret_cast<char*>(&_characters[i].bitmap.front()), static_cast<uint8_t>(_characters[i].bitmap.size()));
+	fclass.seek(dchar[i], SEEK_SET);
+	fclass.read(reinterpret_cast<char*>(&_characters[i].bitmap.front()), static_cast<uint8_t>(_characters[i].bitmap.size()));
     };
 }
 

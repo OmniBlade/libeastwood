@@ -1,20 +1,22 @@
-#ifndef EASTWOOD_WSAFILE_H
-#define EASTWOOD_WSAFILE_H
+#ifndef EASTWOOD_WSACNC_H
+#define	EASTWOOD_WSACNC_H
+
 #include <vector>
 
 //#include "eastwood/DecodeClass.h"
 #include "eastwood/CnCFileClass.h"
 #include "eastwood/Palette.h"
 #include "eastwood/Surface.h"
+#include "eastwood/WsaFile.h"
 
 namespace eastwood {
 
-class WsaFile //: public DecodeClass
+class WsaCnC //: public DecodeClass
 {
 public:
-	WsaFile(CCFileClass& fclass, Palette palette, Surface firstFrame = Surface());
+	WsaCnC(CCFileClass& fclass, Surface firstFrame = Surface());
 
-	~WsaFile();
+	~WsaCnC();
 
 	Surface getSurface(uint16_t frameNumber) const { return _decodedFrames.at(frameNumber); }
 
@@ -22,7 +24,7 @@ public:
 	uint32_t getFramesPer1024ms() const throw() { return _framesPer1024ms; };
 
 private:
-	void decodeFrames(CCFileClass& fclass);
+    void decodeFrames(CCFileClass& fclass);
 	std::vector<uint32_t> _frameOffsTable;
 	std::vector<Surface> _decodedFrames;
 
@@ -31,7 +33,11 @@ private:
     uint16_t _width,
 		 _height;
 	Palette _palette;
+    uint16_t _xpos,
+		 _ypos;
 };
 
 }
-#endif // EASTWOOD_WSAFILE_H
+
+#endif	/* EASTWOOD_WSACNC_H */
+

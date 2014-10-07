@@ -59,10 +59,12 @@ Surface::Surface(const Surface &surface) :
 {
     if(*this)
     	memcpy(this->_pixels, surface._pixels, size());
+    LOG_DEBUG("Surface created with bitdepth %d and palette %d", _bpp, _palette.size());
 }
 
 Surface::~Surface() {
-    delete[] _pixels;
+    if(_pixels)
+        delete[] _pixels;
 }
 
 bool Surface::scalePrecondition(Scaler scaler)
@@ -95,8 +97,10 @@ bool Surface::saveBMP(CCFileClass& output)
     BMPHeader header = {{'B', 'M'}, 0, 0, 0,0 };
     BMPInfoHeader info = { sizeof(BMPInfoHeader), _width, _height, 1, _bpp, BMP_RGB, _height * _pitch, 0, 0, _palette.size(), 0};
 
-    if (!_palette.size() || _bpp != 8)
+    if (!_palette.size() || _bpp != 8) {
+        LOG_ERROR("Formats other than %dbit not supported", _bpp);
 	throw Exception(LOG_ERROR, "Surface", "Format not supported");
+    }
 
     /* Write the BMP file header values */
     fp_offset = static_cast<uint32_t>(output.tell());

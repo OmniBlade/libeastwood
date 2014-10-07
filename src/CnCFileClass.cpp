@@ -531,7 +531,7 @@ bool CCFileClass::write8(uint8_t value)
     return(write(&value, 1) == 1);
 }
 
-uint32_t CCFileClass::seek(uint32_t position, uint8_t mode)
+uint32_t CCFileClass::seek(int32_t position, uint8_t mode)
 {
     if (m_open.fp == NULL) return 0;
     if (mode > 2) { close(); return 0; }

@@ -117,8 +117,10 @@ int decode80(CCFileClass& fclass, uint8_t *image_out)
 	    count = ((command & 0x70) >> 4) + 3;
 	    pos = (command  & 0xf) << 8 | fclass.read8();
 	    //FIXME: This happens at least with WSA animations from Dune 2 demo...
-	    if(writep - pos < image_out)
+	    if(writep - pos < image_out) {
+                LOG_ERROR("Format80 decoding error");
 		throw(Exception(LOG_ERROR, "Decode", "Decode80 position is outside memory area (format probably not supported yet)"));
+            }
 	    //printf("Cmd 1(0x%x), count: %d, pos: %d\n", command, count, pos);
 	    my_memcpy(writep, writep - pos, count);
 	    writep += count;

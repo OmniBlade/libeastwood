@@ -75,7 +75,7 @@ public:
     bool write16(uint16_t value);
     bool write32(uint32_t value);
     bool write8(uint8_t value);
-    uint32_t seek(uint32_t position, uint8_t mode);
+    uint32_t seek(int32_t position, uint8_t mode);
     uint32_t tell();
     uint32_t getSize() const{
         return m_open.size;

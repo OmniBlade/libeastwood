@@ -6,6 +6,8 @@
 #include "eastwood/Surface.h"
 #include "eastwood/CpsFile.h"
 #include "eastwood/PcxFile.h"
+#include "eastwood/FntFile.h"
+#include "eastwood/WsaCnC.h"
 
 const char* mixes[] = {"tdtest.mix", "ratest.mix", "rasub.mix"};
 const char* strfiles[] = {"conquer.eng", "setup.dip", "redalert.eng"};
@@ -33,14 +35,25 @@ int main(int argc, char** argv)
     inif.setBoolValue("Intro", "PlayIntro", true);
     LOG_INFO("%s, %d, %d", lang.c_str(), irq, intro);
     
-    files.open("testing.ini", FILE_MODE_WRITE);
-    inif.SaveChangesTo(files);
+    files.open("sov-tran.wsa");
+    WsaCnC wsa(files);
     files.close();
     
-    files.open("alibackh.pcx");
-    LOG_DEBUG("Opened file %s for reading", "alibackh.pcx");
-    PcxFile cps(files);
-    files.close();
+    Surface cps(wsa.getSurface(4));
+    
+    //files.open("testing.ini", FILE_MODE_WRITE);
+    //inif.SaveChangesTo(files);
+    //files.close();
+    
+    //files.open("palette.cps");
+    //CpsFile cps(files);
+    //files.close();
+    
+    //files.open("led.fnt");
+    //FntFile fnt(files);
+    //files.close();
+    
+    //fnt.render("This is a big test", cps, 25, 25, 0);
     
     files.open("test1.bmp", FILE_MODE_WRITE);
     LOG_DEBUG("Opened file %s for writing", "test1.bmp");

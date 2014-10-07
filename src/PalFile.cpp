@@ -26,7 +26,7 @@ PalFile::PalFile(CCFileClass& fclass, bool ww) : _palette(256)
 	_palette[i].unused = 0;
         }
     }
-    LOG_DEBUG("Palette successfully read.");
+    LOG_DEBUG("Palette successfully read with size %d", _palette.size());
 }
 
 PalFile::~PalFile()
