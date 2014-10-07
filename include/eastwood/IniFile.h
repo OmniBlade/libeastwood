@@ -4,7 +4,8 @@
 #include <string>
 #include <ostream>
 
-#include "eastwood/IStream.h"
+//#include "eastwood/IStream.h"
+#include "CnCFileClass.h"
 
 namespace eastwood {
 
@@ -90,7 +91,7 @@ private:
 public:
 	typedef IniFile::KeyEntry* KeyListHandle;		///< A handle to a KeyList opened with KeyList_Open().
 
-	IniFile(std::istream &stream);
+	IniFile(CCFileClass& fclass);
 	~IniFile();
 	
 	std::string getStringValue(std::string section, std::string key, std::string defaultValue = "");
@@ -106,16 +107,15 @@ public:
 	std::string KeyList_GetNextKey(KeyListHandle *handle);
 	void KeyList_Close(KeyListHandle *handle);
 	
-	bool SaveChangesTo(std::ostream &output);
+	bool SaveChangesTo(CCFileClass& fclass);
 	
 	
 private:
-	IStream &_stream;
 	CommentEntry *FirstLine;
 	SectionEntry *SectionRoot;
 	
 	void flush();
-	void readFile();
+	void readFile(CCFileClass& fclass);
 	
 	void InsertSection(SectionEntry *newSection);
 	void InsertKey(SectionEntry *section, KeyEntry *newKeyEntry);

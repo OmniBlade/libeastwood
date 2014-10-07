@@ -5,8 +5,11 @@ SET( LIBEASTWOOD_SRCS
   AdlFile.cpp
   BlowFish.cpp
   CpsFile.cpp
+  CnCFileClass.cpp
+  CnCStrFile.cpp
   Decode.cpp
   Dune2File.cpp
+  Dune2StrFile.cpp
   EmcFileAssemble.cpp
   EmcFileBase.cpp
   EmcFileDisassemble.cpp
@@ -18,14 +21,12 @@ SET( LIBEASTWOOD_SRCS
   IniFile.cpp
   IStream.cpp
   MapFile.cpp
-  MixFile.cpp
   OStream.cpp
   PakFile.cpp
   Palette.cpp
   PalFile.cpp
   ShpFile.cpp
   Sound.cpp
-  StringFile.cpp
   Surface.cpp
   VocFile.cpp
   WsaFile.cpp
@@ -55,7 +56,7 @@ SET( SDL_LIBEASTWOOD_SRCS
 set_source_files_properties(WsKey.cpp PROPERTIES COMPILE_FLAGS "-O0 -DNDEBUG")
 set_source_files_properties(BlowFish.cpp PROPERTIES COMPILE_FLAGS "-O0 -DNDEBUG")
 
-ADD_LIBRARY( eastwood SHARED ${LIBEASTWOOD_SRCS} )
+ADD_LIBRARY( eastwood STATIC ${LIBEASTWOOD_SRCS} )
 TARGET_LINK_LIBRARIES( eastwood ${LIBSAMPLERATE_LIBRARIES} )
 IF(WIN32)
   IF(MSVC)
@@ -67,7 +68,7 @@ ENDIF(WIN32)
 SET_TARGET_PROPERTIES( eastwood PROPERTIES SOVERSION "${LIBEASTWOOD_SOVERSION_INFO}" )
 IF(NOT WIN32)
   IF( DEFINED CMAKE_INSTALL_LIBDIR )
-    INSTALL(TARGETS eastwood LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} )
+    INSTALL(TARGETS eastwood ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} )
   ENDIF( DEFINED CMAKE_INSTALL_LIBDIR )
 ENDIF(NOT WIN32)
 

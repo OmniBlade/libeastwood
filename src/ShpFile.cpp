@@ -17,7 +17,7 @@ static inline TileType getType(const uint32_t x) {
 }
 
 ShpFile::ShpFile(std::istream &stream, Palette palette) :
-    Decode(stream, 0, 0, palette), _index(1), _size(0)
+    DecodeClass(stream, 0, 0, palette), _index(1), _size(0)
 {
     readIndex();
 }

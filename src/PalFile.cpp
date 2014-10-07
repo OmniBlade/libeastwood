@@ -7,12 +7,12 @@
 
 namespace eastwood {
 
-PalFile::PalFile(std::istream &stream) : _palette(256)
+PalFile::PalFile(CCFileClass& fclass) : _palette(256)
 {
     for (uint16_t i = 0; i < _palette.size(); i++){
-	_palette[i].r = stream.get()<<2;
-	_palette[i].g = stream.get()<<2;
-	_palette[i].b = stream.get()<<2;
+	_palette[i].r = fclass.read8()<<2;
+	_palette[i].g = fclass.read8()<<2;
+	_palette[i].b = fclass.read8()<<2;
 	_palette[i].unused = 0;
     }
 }

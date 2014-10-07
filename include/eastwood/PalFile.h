@@ -1,8 +1,6 @@
 #ifndef EASTWOOD_PALFILE_H
 #define EASTWOOD_PALFILE_H
 
-#include <istream>
-
 #include "eastwood/Palette.h"
 
 namespace eastwood {
@@ -10,7 +8,7 @@ namespace eastwood {
 class PalFile
 {
     public:
-	PalFile(std::istream &stream);
+	PalFile(CCFileClass& fclass);
 	~PalFile();
 
 	Palette getPalette();

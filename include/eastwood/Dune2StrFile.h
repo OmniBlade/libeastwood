@@ -1,5 +1,5 @@
-#ifndef EASTWOOD_STRINGFILE_H
-#define EASTWOOD_STRINGFILE_H
+#ifndef EASTWOOD_DUNE2STRFILE_H
+#define EASTWOOD_DUNE2STRFILE_H
 
 #include <string>
 #include <vector>
@@ -60,4 +60,4 @@ class StringFile
 };
 
 }
-#endif // EASTWOOD_STRINGFILE_H
+#endif // EASTWOOD_DUNE2STRFILE_H

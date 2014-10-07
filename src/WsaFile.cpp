@@ -13,7 +13,7 @@ namespace eastwood {
 
 WsaFile::WsaFile(std::istream &stream, Palette palette,
 	Surface firstFrame) :
-    Decode(stream, 0, 0, palette), _frameOffsTable(0),
+    DecodeClass(stream, 0, 0, palette), _frameOffsTable(0),
     _decodedFrames(0), _deltaBufferSize(0), _framesPer1024ms(0)
 {
     uint32_t frameDataOffs;

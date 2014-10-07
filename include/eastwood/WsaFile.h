@@ -2,11 +2,11 @@
 #define EASTWOOD_WSAFILE_H
 #include <vector>
 
-#include "eastwood/Decode.h"
+#include "eastwood/DecodeClass.h"
 
 namespace eastwood {
 
-class WsaFile : public Decode
+class WsaFile : public DecodeClass
 {
 public:
 	WsaFile(std::istream &stream, Palette palette,

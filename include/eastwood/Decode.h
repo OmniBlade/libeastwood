@@ -1,34 +1,28 @@
+/* 
+ * File:   decode.h
+ * Author: aidan
+ *
+ * Created on 21 September 2014, 23:11
+ */
+
 #ifndef EASTWOOD_DECODE_H
-#define EASTWOOD_DECODE_H
+#define	EASTWOOD_DECODE_H
 
-#include "eastwood/IStream.h"
-#include "eastwood/Palette.h"
-#include "eastwood/Surface.h"
+#include "StdDef.h"
+#include "CnCFileClass.h"
 
-namespace eastwood {
+namespace eastwood { namespace Decode {
+    /** Decompress format 80 compressed data. */
+	int decode80buffer(const uint8_t* src, uint8_t* dest);
+    int decode80(CCFileClass& fclass, uint8_t *image_out, uint32_t checksum);
+	/** Decompress format 40 compressed data. */
+	int decode40(const uint8_t* src, uint8_t* dest);
+	/** Decompress format 20 compressed data. */
+	int decode20(const uint8_t* src, uint8_t* dest, int size);
+	/** Decodes base64 data */
+	int decodeBase64(const uint8_t* src, uint8_t* dest, const uint32_t length);
 
-class Decode
-{
-public:
-	Decode(std::istream &stream, uint16_t width, uint16_t height, Palette palette);
-	virtual ~Decode();
+} } //eastwood
 
-protected:
-	int decode80(uint8_t *image_out, uint32_t checksum);
-	int decode40(const unsigned char *image_in, unsigned char *image_out);
-	void decode2(std::istream &stream, uint8_t *out, int size);
-	void decode2(const std::vector<uint8_t> &in, uint8_t *out);
-	//FIXME:
-	void encode2(const uint8_t *source, int len, int slices, std::ostream &dest);
+#endif	/* EASTWOOD_DECODE_H */
 
-
-
-
-	IStream &_stream;
-	uint16_t _width,
-		 _height;
-	Palette _palette;
-};
-
-}
-#endif // EASTWOOD_DECODE_H

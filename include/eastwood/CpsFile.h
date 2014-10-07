@@ -1,8 +1,8 @@
 #ifndef EASTWOOD_CPSFILE_H
 #define EASTWOOD_CPSFILE_H
 
-#include "eastwood/Decode.h"
 #include "eastwood/Palette.h"
+#include "eastwood/Surface.h"
 
 namespace eastwood {
 
@@ -12,18 +12,15 @@ enum compressionFormat {
     FORMAT_80 = 0x004
 };
 
-class CpsFile : public Decode
+class CpsFile : public Surface
 {
     public:
-	CpsFile(std::istream &stream, Palette palette = Palette(0));
+	CpsFile(CCFileClass& fclass, Palette palette = Palette(0));
 	~CpsFile();
-
-	Surface getSurface();
 
     private:
 	void readHeader();
 	compressionFormat _format;
-
 };
 
 }

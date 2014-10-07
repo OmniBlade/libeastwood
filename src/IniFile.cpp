@@ -15,13 +15,12 @@ namespace eastwood {
 	reading the file is closed immediately. If the file does not exist, it is treated as empty.
 	\param	filename	The file to be opened.
 */
-IniFile::IniFile(std::istream &stream) :
-    _stream(reinterpret_cast<IStream&>(stream))
+IniFile::IniFile(CCFileClass& fclass)
 {
 	FirstLine = NULL;
 	SectionRoot = NULL;
 	
-	readFile();
+	readFile(fclass);
 }
 
 
@@ -117,7 +116,7 @@ bool IniFile::getBoolValue(std::string section, std::string key, bool defaultVal
 	}
 	
 	// convert std::string to lower case
-	transform(value.begin(),value.end(), value.begin(), ::tolower);
+	std::transform(value.begin(),value.end(), value.begin(), ::tolower);
 	
 	if((value == "true") || (value == "enabled") || (value == "on") || (value == "1")) {
 		return true;
@@ -399,11 +398,11 @@ void IniFile::KeyList_Close(KeyListHandle *handle) {
 	\param	output	ostream that is used for writing. (Cannot be readonly)
 	\return	true on success otherwise false.
 */
-bool IniFile::SaveChangesTo(std::ostream &output) {
+bool IniFile::SaveChangesTo(CCFileClass& fclass) {
 	CommentEntry *curEntry = FirstLine;
 	
 	while(curEntry != NULL) {
-	    output.write(curEntry->CompleteLine.c_str(), curEntry->CompleteLine.size());
+	    fclass.write((curEntry->CompleteLine + "\r\n").c_str(), curEntry->CompleteLine.size() + 2);
 	    curEntry = curEntry->nextEntry;
 	}
 	
@@ -425,7 +424,7 @@ void IniFile::flush()
 
 }
 
-void IniFile::readFile()
+void IniFile::readFile(CCFileClass& fclass)
 {	
 	if((SectionRoot = new SectionEntry("",0,0)) == NULL)
     	    throw(std::bad_alloc());
@@ -448,10 +447,10 @@ void IniFile::readFile()
 		completeLine = "";
 		uint8_t tmp;
 		
-		size_t size = _stream.sizeg();
-		while(static_cast<uint32_t>(_stream.tellg()) < size-1) {
-			tmp = _stream.get();
-			if(static_cast<uint32_t>(_stream.tellg()) == size-1) {
+		size_t size = fclass.getSize();
+		while(static_cast<uint32_t>(fclass.tell()) < size-1) {
+			tmp = fclass.read8();
+			if(static_cast<uint32_t>(fclass.tell()) == size-1) {
 				readfinished = true;
 				break;
 			} else if(tmp == '\n') {

@@ -1,6 +1,7 @@
 #ifndef EASTWOOD_PALETTE_H
 #define EASTWOOD_PALETTE_H
 
+#include "CnCFileClass.h"
 #include <vector>
 
 namespace eastwood {
@@ -28,7 +29,7 @@ class Palette {
 
 	uint16_t size() const throw() { return _palette.size(); }
 
-	bool savePAL(std::ostream &output);
+	bool savePAL(CCFileClass& fclass);
 
     protected:
 	std::vector<Color> _palette;

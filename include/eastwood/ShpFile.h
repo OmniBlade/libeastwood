@@ -4,7 +4,7 @@
 #include <istream>
 #include <vector>
 
-#include "eastwood/Decode.h"
+#include "eastwood/DecodeClass.h"
 
 namespace eastwood {
 
@@ -21,7 +21,7 @@ struct ShpFileEntry
     uint32_t endOffset;
 };
 
-class ShpFile : public Decode
+class ShpFile : public DecodeClass
 {
     public:
 	ShpFile(std::istream &stream, Palette palette);

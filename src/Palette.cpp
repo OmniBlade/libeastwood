@@ -7,12 +7,12 @@ Palette::Palette(uint16_t colors) : _palette(colors)
 {
 }
 
-bool Palette::savePAL(std::ostream &output)
+bool Palette::savePAL(CCFileClass& fclass)
 {
     for (uint16_t i = 0; i < _palette.size(); i++){
-	output.put(_palette[i].r>>2);
-	output.put(_palette[i].g>>2);
-	output.put(_palette[i].b>>2);
+	fclass.write8(_palette[i].r>>2);
+	fclass.write8(_palette[i].g>>2);
+	fclass.write8(_palette[i].b>>2);
     }
     return true;
 }

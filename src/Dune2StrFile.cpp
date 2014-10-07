@@ -1,6 +1,6 @@
 #include "eastwood/StdDef.h"
 #include "eastwood/Exception.h"
-#include "eastwood/StringFile.h"
+#include "eastwood/Dune2StrFile.h"
 
 namespace eastwood {
 

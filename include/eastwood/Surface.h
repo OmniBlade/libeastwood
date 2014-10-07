@@ -1,7 +1,6 @@
 #ifndef EASTWOOD_SURFACE_H
 #define EASTWOOD_SURFACE_H
 
-#include <ostream>
 #include <memory>
 
 #include "eastwood/Buffer.h"
@@ -47,7 +46,7 @@ class Surface {
 
 	bool scalePrecondition(Scaler scale);
 	Surface getScaled(Scaler scale);
-	bool saveBMP(std::ostream &output);
+	bool saveBMP(CCFileClass& output);
 
     protected:
 	uint8_t _bpp,
