@@ -1,6 +1,10 @@
 #ifndef EASTWOOD_LOG_H
 #define EASTWOOD_LOG_H
 
+#include <errno.h>
+
+#define clean_errno() (errno == 0 ? "None" : strerror(errno))
+
 #ifdef NDEBUG
 #define LOG_DEBUG(M, ...)
 #else

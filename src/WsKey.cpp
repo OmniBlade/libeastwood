@@ -1,6 +1,8 @@
 #include "eastwood/WsKey.h"
 #include <cstring>
 
+namespace eastwood {
+
 const char *pubkey_str = "AihRvNoIbTn85FZRYNZRcT+i6KpU+maCsEqr3Q5q+LDB5tH7Tz2qQ38V";
 
 const static char char2num[] = {
@@ -426,4 +428,6 @@ void get_blowfish_key(const uint8_t* s, uint8_t* d)
     uint8_t key[256];
     process_predata(s, len_predata(), key);
     memcpy(d, key, 56);
+}
+
 }

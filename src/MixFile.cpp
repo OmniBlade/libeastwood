@@ -3,6 +3,8 @@
 #include "eastwood/Exception.h"
 #include "eastwood/Log.h"
 #include "eastwood/MixFile.h"
+#include "eastwood/BlowFish.h"
+#include "eastwood/WsKey.h"
 
 namespace eastwood {
 
