@@ -4,7 +4,7 @@
 #include <istream>
 #include <vector>
 
-#include "eastwood/DecodeClass.h"
+#include "eastwood/CnCFileClass.h"
 
 namespace eastwood {
 
@@ -21,10 +21,10 @@ struct ShpFileEntry
     uint32_t endOffset;
 };
 
-class ShpFile : public DecodeClass
+class ShpFile
 {
     public:
-	ShpFile(std::istream &stream, Palette palette);
+	ShpFile(CCFileClass& fclass, Palette palette);
 	~ShpFile();
 
 	/*!
@@ -33,7 +33,7 @@ class ShpFile : public DecodeClass
 	  @param	IndexOfFile	specifies which picture to return (zero based)
 	  @return	nth picture in this shp-File
 	  */
-	Surface getSurface(const uint16_t fileIndex);
+	Surface getSurface(const uint16_t fileIndex) { return _decodedFrames[fileIndex]; }
 
 
 	/*!
@@ -64,10 +64,13 @@ class ShpFile : public DecodeClass
 	uint16_t size() const throw() { return _size; }
 
     private:
-	void readIndex();
+	void readIndex(CCFileClass& fclass);
+    Surface decodeFrame(CCFileClass& fclass, const uint16_t fileIndex);
 
 	std::vector<ShpFileEntry> _index;
+    std::vector<Surface> _decodedFrames;
 	uint16_t _size;
+    Palette _palette;
 };
 
 }
