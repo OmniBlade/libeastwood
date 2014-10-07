@@ -1,19 +1,19 @@
-#include <iostream>
-#include <string>
-#include <vector>
+//#include <iostream>
+//#include <string>
+//#include <vector>
 
 #include "eastwood/StdDef.h"
-#include "eastwood/Decode.h"
 #include "eastwood/CpsFile.h"
 #include "eastwood/Exception.h"
-#include "eastwood/Log.h"
 #include "eastwood/PalFile.h"
+#include "eastwood/Decode.h"
 
 namespace eastwood {
 
 CpsFile::CpsFile(CCFileClass& fclass, Palette palette) :
     Surface(320, 200, 8, palette), _format(UNCOMPRESSED)
 {
+    int hsize = 10; //minimum header size
     LOG_DEBUG("Reading CPS header");
     if(fclass.readle16() + 2 != fclass.getSize())
         throw(Exception(LOG_ERROR, "CpsFile", "Invalid file size"));
@@ -41,25 +41,34 @@ CpsFile::CpsFile(CCFileClass& fclass, Palette palette) :
 	LOG_INFO("CpsFile %s", "CPS has embedded palette");
         PalFile pal(fclass);
         _palette = pal.getPalette();
+        hsize += 768;
     }
     else if(!_palette)
 	throw(Exception(LOG_ERROR, "CpsFile", "No palette provided as argument or embedded in CPS"));
-
+    
+    int test;
     switch(_format) {
 	case UNCOMPRESSED:
-	    fclass.read(reinterpret_cast<char*>(_pixels.get()), size());
+	    fclass.read(reinterpret_cast<char*>(_pixels), size());
 	    break;
 	case FORMAT_LBM:
 	    //TODO: implement?
 	    throw(Exception(LOG_ERROR, "CpsFile", "LBM format not yet supported"));
 	    break;
 	case FORMAT_80:
-    	if(Decode::decode80(fclass, reinterpret_cast<uint8_t*>(_pixels.get()), 0) == -2)
-    	    throw(Exception(LOG_ERROR, "CpsFile", "Cannot decode Cps-File"));
-	break;
+            LOG_DEBUG("Attempting format80 decode");
+            //fclass.read(&buffer[0], fclass.getSize() - hsize);
+            test = Decode::decode80(fclass, _pixels);
+            if(test != size()){
+                LOG_DEBUG("Decode may have failed %d does not equal image size %d", test, size());
+                //throw(Exception(LOG_ERROR, "CpsFile", "Cannot decode Cps-File"));
+            }
+            break;
 	default:
 	    throw(Exception(LOG_ERROR, "CpsFile", "Unknown format"));
     }
+    
+    LOG_DEBUG("Decode success??");
 }
 
 CpsFile::~CpsFile()

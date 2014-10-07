@@ -7,14 +7,26 @@
 
 namespace eastwood {
 
-PalFile::PalFile(CCFileClass& fclass) : _palette(256)
+PalFile::PalFile(CCFileClass& fclass, bool ww) : _palette(256)
 {
-    for (uint16_t i = 0; i < _palette.size(); i++){
-	_palette[i].r = fclass.read8()<<2;
-	_palette[i].g = fclass.read8()<<2;
-	_palette[i].b = fclass.read8()<<2;
+    if(ww) {
+        LOG_DEBUG("Getting WW format pal");
+        for (uint16_t i = 0; i < _palette.size(); i++){
+            _palette[i].r = fclass.read8()<<2;
+            _palette[i].g = fclass.read8()<<2;
+            _palette[i].b = fclass.read8()<<2;
+            _palette[i].unused = 0;
+        }
+    } else {
+        LOG_DEBUG("Getting normal format pal");
+        for (uint16_t i = 0; i < _palette.size(); i++){
+	_palette[i].r = fclass.read8();
+	_palette[i].g = fclass.read8();
+	_palette[i].b = fclass.read8();
 	_palette[i].unused = 0;
+        }
     }
+    LOG_DEBUG("Palette successfully read.");
 }
 
 PalFile::~PalFile()

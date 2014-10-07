@@ -19,7 +19,6 @@ class CpsFile : public Surface
 	~CpsFile();
 
     private:
-	void readHeader();
 	compressionFormat _format;
 };
 

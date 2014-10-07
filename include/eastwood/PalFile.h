@@ -8,7 +8,7 @@ namespace eastwood {
 class PalFile
 {
     public:
-	PalFile(CCFileClass& fclass);
+	PalFile(CCFileClass& fclass, bool ww = true);
 	~PalFile();
 
 	Palette getPalette();

@@ -26,6 +26,7 @@ SET( LIBEASTWOOD_SRCS
   PakFile.cpp
   Palette.cpp
   PalFile.cpp
+  PcxFile.cpp
   ShpFile.cpp
   Sound.cpp
   Surface.cpp

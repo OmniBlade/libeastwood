@@ -96,7 +96,7 @@ int decodeBase64(const uint8_t* src, uint8_t* dest, const uint32_t length)
     return 0;
 }
 
-int decode80(CCFileClass& fclass, uint8_t *image_out, uint32_t checksum)
+int decode80(CCFileClass& fclass, uint8_t *image_out)
 {
     uint8_t *writep = image_out;
 
@@ -159,12 +159,11 @@ int decode80(CCFileClass& fclass, uint8_t *image_out, uint32_t checksum)
 	    }
 	}
     }
-    if ((writep - image_out) != checksum)
-	return -1;
-    return 0;
+    
+    return writep - image_out;
 }
 
-int decode80buffer(const uint8_t* src, uint8_t* dest)
+int decode80buffer(uint8_t *source, uint8_t *dest, uint16_t destLength)
 {
 	// To resume :
 	//    0 copy 0cccpppp p
@@ -174,97 +173,90 @@ int decode80buffer(const uint8_t* src, uint8_t* dest)
 	//    4 copy 11111111 c c p p
 
 
-    const uint8_t* copyp;
-    const uint8_t* readp = src;
-    uint8_t* writep = dest;
-    uint32_t code;
-    uint32_t count;
-#if __BYTE_ORDER == __BIG_ENDIAN
+    uint8_t *start = dest;
+    uint8_t *end = dest + destLength;
 
-    uint16_t bigend; // temporary big endian var
-#endif
+    while (dest != end) {
+        uint8_t flag;
+        uint16_t size;
+        uint16_t offset;
 
-    while (1) {
-        code = *readp++;
-        if (~code & 0x80) {
-            //bit 7 = 0
-            //command 0 (0cccpppp p): copy
-            count = (code >> 4) + 3;
-            copyp = writep - (((code & 0xf) << 8) + *readp++);
-            while (count--)
-                *writep++ = *copyp++;
-        } else {
-            //bit 7 = 1
-            count = code & 0x3f;
-            if (~code & 0x40) {
-                //bit 6 = 0
-                if (!count)
-                    //end of image
-                    break;
-                //command 1 (10cccccc): copy
-                while (count--)
-                    *writep++ = *readp++;
-            } else {
-                //bit 6 = 1
-                if (count < 0x3e) {
-                    //command 2 (11cccccc p p): copy
-                    count += 3;
-                    
-#if __BYTE_ORDER == __BIG_ENDIAN
+        flag = *source++;
 
-                    memcpy(&bigend, readp, 2);
-                    copyp = &dest[endian_bswap16(bigend)];
-#else
+        /* Short move, relative */
+        if ((flag & 0x80) == 0) {
+            size = (flag >> 4) + 3;
+            if (size > end - dest) size = end - dest;
 
-                    copyp = &dest[*(uint16_t*)readp];
-#endif
-                    readp += 2;
-                    while (count--)
-                        *writep++ = *copyp++;
-                } else if (count == 0x3e) {
-                    //command 3 (11111110 c c v): fill
-#if __BYTE_ORDER == __BIG_ENDIAN
-                    memset(&count, 0, sizeof(uint32_t));
-                    memcpy(&count, readp, 2);
-                    count = endian_bswap32(count);
-#else
+            offset = ((flag & 0xF) << 8) + (*source++);
 
-                    count = *(uint16_t*)readp;
-#endif
+            /* This decoder assumes memcpy. As some platforms implement memcpy as memmove, this is much safer */
+            for (; size > 0; size--) { *dest = *(dest - offset); dest++; }
+            continue;
+        }
 
-                    readp += 2;
-                    code = *readp++;
-                    while (count--)
-                        *writep++ = code;
-                } else {
-                    //command 4 (copy 11111111 c c p p): copy
-#if __BYTE_ORDER == __BIG_ENDIAN
-                    memset(&count, 0, sizeof(uint32_t));
-                    memcpy(&count, readp, 2);
-                    count = endian_bswap32(count);
-#else
+        /* Exit */
+        if (flag == 0x80) {
+            LOG_DEBUG("Flags 0x80");
+            break;
+        }
 
-                    count = *(uint16_t*)readp;
-#endif
+        /* Long set */
+        if (flag == 0xFE) {
+            size = *source++;
+            size += (*source++) << 8;
+            if (size > end - dest) size = end - dest;
 
-                    readp += 2;
-#if __BYTE_ORDER == __BIG_ENDIAN
+            memset(dest, (*source++), size);
+            dest += size;
+            continue;
+        }
 
-                    memcpy(&bigend, readp, 2);
-                    copyp = &dest[endian_bswap16(bigend)];
-#else
+        /* Long move, absolute */
+        if (flag == 0xFF) {
+            uint8_t *s;
 
-                    copyp = &dest[*(uint16_t*)readp];
-#endif
+            size = *source++;
+            size += (*source++) << 8;
+            if (size > end - dest) size = end - dest;
 
-                    readp += 2;
-                    while (count--)
-                        *writep++ = *copyp++;
-                }
-            }
+            offset = *source++;
+            offset += (*source++) << 8;
+
+            s = end - destLength + offset;
+            /* This decoder assumes memcpy. As some platforms implement memcpy as memmove, this is much safer */
+            for (; size > 0; size--) *dest++ = *s++;
+            continue;
+        }
+
+        /* Short move, absolute */
+        if ((flag & 0x40) != 0) {
+            uint8_t *s;
+
+            size = (flag & 0x3F) + 3;
+            if (size > end - dest) size = end - dest;
+
+            offset = *source++;
+            offset += (*source++) << 8;
+
+            s = end - destLength + offset;
+            /* This decoder assumes memcpy. As some platforms implement memcpy as memmove, this is much safer */
+            for (; size > 0; size--) *dest++ = *s++;
+            continue;
+        }
+
+        /* Short copy */
+        {
+            size = flag & 0x3F;
+            if (size > end - dest) size = end - dest;
+
+            /* This decoder assumes memcpy. As some platforms implement memcpy as memmove, this is much safer */
+            for (; size > 0; size--) *dest++ = *source++;
+            continue;
         }
     }
-    return (writep - dest);
+
+    return dest - start;
 }
 
 int decode40(const uint8_t* src, uint8_t* dest)

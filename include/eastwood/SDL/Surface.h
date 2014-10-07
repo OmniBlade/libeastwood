@@ -34,7 +34,7 @@ class Surface : public eastwood::Surface
 	Surface(const SDL_Surface *surface) :
 	    eastwood::Surface(surface->w, surface->h, surface->format->BitsPerPixel, SDL::Palette(surface->format->palette)),
 	    _surface(SDL_ConvertSurface(const_cast<SDL_Surface*>(surface), surface->format, surface->flags)) {
-		_pixels.reset(new Bytes(reinterpret_cast<uint8_t*>(_surface->pixels), (surface->flags & SDL_PREALLOC) ? BufNewArray : BufMalloc));
+		_pixels = reinterpret_cast<uint8_t*>(_surface->pixels);
 	    }
 
 	virtual ~Surface() {
@@ -72,7 +72,7 @@ class Surface : public eastwood::Surface
 	    _width = surface->w;
 	    _height = surface->h;
 	    _pitch = surface->pitch;
-	    _pixels.reset(new Bytes(reinterpret_cast<uint8_t*>(_surface->pixels), (surface->flags & SDL_PREALLOC) ? BufNewArray : BufMalloc));
+	    _pixels = reinterpret_cast<uint8_t*>(_surface->pixels);
 	    if(surface->format->palette != NULL)
 		_palette = SDL::Palette(surface->format->palette);
 

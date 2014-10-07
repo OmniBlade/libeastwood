@@ -5,6 +5,7 @@
 #include "eastwood/StdDef.h"
 #include "eastwood/Surface.h"
 #include "eastwood/CpsFile.h"
+#include "eastwood/PcxFile.h"
 
 const char* mixes[] = {"tdtest.mix", "ratest.mix", "rasub.mix"};
 const char* strfiles[] = {"conquer.eng", "setup.dip", "redalert.eng"};
@@ -36,15 +37,14 @@ int main(int argc, char** argv)
     inif.SaveChangesTo(files);
     files.close();
     
-    files.open("sovpaper.cps");
-    LOG_DEBUG("Opened file %s for reading", "sovpaper.cps");
-    CpsFile cps(files);
+    files.open("alibackh.pcx");
+    LOG_DEBUG("Opened file %s for reading", "alibackh.pcx");
+    PcxFile cps(files);
     files.close();
     
     files.open("test1.bmp", FILE_MODE_WRITE);
-    if(files.getSize()) {
-        cps.saveBMP(files);
-    }
+    LOG_DEBUG("Opened file %s for writing", "test1.bmp");
+    cps.saveBMP(files);
     files.close();
     
     return 0;

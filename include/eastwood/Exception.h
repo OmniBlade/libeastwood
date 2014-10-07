@@ -5,6 +5,7 @@
 #include <string>
 
 #include "eastwood/StdDef.h"
+#include "eastwood/Log.h"
 
 namespace eastwood {
 

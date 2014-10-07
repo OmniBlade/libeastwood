@@ -3,7 +3,7 @@
 
 #include <memory>
 
-#include "eastwood/Buffer.h"
+#include "eastwood/StdDef.h"
 #include "eastwood/Palette.h"
 
 namespace eastwood {
@@ -26,10 +26,10 @@ class Surface {
 	Surface(const Surface &surface);
 
 	virtual operator uint8_t*() const {
-	    return *_pixels.get();
+	    return _pixels;
 	}
 	virtual operator void*() const {
-            return *_pixels.get();
+            return _pixels;
         }
 
 	virtual operator bool() const {
@@ -46,7 +46,7 @@ class Surface {
 
 	bool scalePrecondition(Scaler scale);
 	Surface getScaled(Scaler scale);
-	bool saveBMP(CCFileClass& output);
+	virtual bool saveBMP(CCFileClass& output);
 
     protected:
 	uint8_t _bpp,
@@ -54,7 +54,7 @@ class Surface {
 	uint16_t _width,
 		 _height,
 		 _pitch;
-	BytesPtr _pixels;
+	uint8_t* _pixels;
 	Palette _palette;
 };
 }

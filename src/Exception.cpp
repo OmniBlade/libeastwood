@@ -5,6 +5,7 @@ namespace eastwood {
 Exception::Exception(logLevel level, std::string location, std::string message) :
     _level(level), _location(location), _message(message)
 {
+    LOG_DEBUG("Exception in %s: %s", location.c_str(), message.c_str());
 }
 
 Exception::Exception(logLevel level, std::string location, const char *format, ...) :
