@@ -1,7 +1,7 @@
-#ifndef EASTWOOD_SHPFILE_H
-#define EASTWOOD_SHPFILE_H
 
-#include <istream>
+#ifndef EASTWOOD_SHPCNC_H
+#define	EASTWOOD_SHPCNC_H
+
 #include <vector>
 
 #include "eastwood/CnCFileClass.h"
@@ -10,11 +10,11 @@
 
 namespace eastwood {
 
-class ShpFile
+class ShpCnC
 {
     public:
-	ShpFile(CCFileClass& fclass, Palette palette);
-	~ShpFile();
+	ShpCnC(CCFileClass& fclass, Palette palette);
+	~ShpCnC();
 
 	/*!
 	  This method returns a SDL_Surface containing the nth picture in this shp-File.
@@ -51,20 +51,26 @@ class ShpFile
 	uint16_t size() const throw() { return _size; }
 
     private:
-        struct ShpFileEntry
+        struct ShpCnCEntry
         {
-            uint32_t startOffset;
-            uint32_t endOffset;
+            uint32_t Offset;
+            uint8_t  Format;
+            uint32_t RefOffs;
+            uint8_t  RefFormat;
         };
         
         void readIndex(CCFileClass& fclass);
         Surface decodeFrame(CCFileClass& fclass, const uint16_t fileIndex);
 
-        std::vector<ShpFileEntry> _index;
+        std::vector<ShpCnCEntry> _index;
         std::vector<Surface> _decodedFrames;
         uint16_t _size;
+        uint16_t _width;
+        uint16_t _height;
         Palette _palette;
 };
 
 }
-#endif // EASTWOOD_SHPFILE_H
+
+#endif	/* EASTWOOD_SHPCNC_H */
+

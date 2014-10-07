@@ -1,0 +1,12 @@
+prefix=/usr/local
+exec_prefix=
+libdir=
+includedir=/usr/local/include
+
+Name: libeastwood
+Description: libeastwood game data library
+Version: 0.3.1
+URL: https://launchpad.net/doonlunacy
+Cflags: -I${includedir}
+Libs: -L${libdir} -lsamplerate -leastwood
+
