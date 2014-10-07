@@ -4,7 +4,7 @@
 #include <string>
 #include <istream>
 
-#include "eastwood/IStream.h"
+#include "eastwood/CnCFileClass.h"
 #include "eastwood/Surface.h"
 
 namespace eastwood {
@@ -13,7 +13,7 @@ class FntFile
 {
     public:
 	FntFile() : _characters(), _height(0) {}
-        FntFile(std::istream &stream);
+        FntFile(CCFileClass& fclass);
         ~FntFile();
 
         void extents(std::string text, uint16_t& w, uint16_t& h) const;

@@ -6,8 +6,8 @@
 
 namespace eastwood {
 
-const uint8_t pcxSig = 0x0A;
-const int OFFSET = 128;
+const uint8_t pcxSig = 0x0A;    //zsoft pcx format signature
+const int OFFSET = 128;         //size of pcx header
 
 PcxFile::PcxFile(CCFileClass& fclass):
 Surface(), _format(V30_STD)

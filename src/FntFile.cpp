@@ -24,20 +24,31 @@ struct FNTHeader
     uint8_t maxw;     /* Max. character width          */
 };
 
-FntFile::FntFile(std::istream &stream) :
+FntFile::FntFile(CCFileClass& fclass) :
     _characters(), _height(0)
 {
     IStream &_stream = reinterpret_cast<IStream&>(stream);
     FNTHeader header;
-    _stream.readU16LE(reinterpret_cast<uint16_t*>(&header), offsetof(FNTHeader, nchars)/sizeof(uint16_t));
+    //fclass.read(reinterpret_cast<uint8_t*>(&header), offsetof(FNTHeader, nchars)/sizeof(uint8_t));
+    //_stream.readU16LE(reinterpret_cast<uint16_t*>(&header), offsetof(FNTHeader, nchars)/sizeof(uint16_t));
+    header.fsize = fclass.readle16();
+    header.unknown1 = fclass.readle16();
+    header.unknown2 = fclass.readle16();
+    header.unknown3 = fclass.readle16();
+    header.wpos = fclass.readle16();
+    header.cdata = fclass.readle16();
+    header.hpos = fclass.readle16();
+    header.unknown4 = fclass.readle16();
+    
     if (header.unknown1 != 0x0500 || header.unknown2 != 0x000e || header.unknown3 != 0x0014)
 	throw(Exception(LOG_ERROR, "FntFile", "Invalid header"));
 
     // alignment padding
-    _stream.ignore(1);
-    header.nchars = _stream.get() + 1;
-    header.height = _stream.get();
-    header.maxw = _stream.get();
+    //_stream.ignore(1);
+    fclass.read8();
+    header.nchars = fclass.read8() + 1;
+    header.height = fclass.read8();
+    header.maxw = fclass.read8();
 
     _height = header.height;
 
