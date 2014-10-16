@@ -7,10 +7,10 @@
 
 namespace eastwood { namespace codec {
 
-    int decode80(uint8_t* src, uint8_t* dest);
+    int decode80(const uint8_t* src, uint8_t* dest);
     int decode80(std::istream& src, uint8_t* dest);
-    int encode80(uint8_t* src, uint8_t* dest, int len);
-    int encode80(uint8_t* src, std::ostream& dest, int len);
+    int encode80(const uint8_t* src, uint8_t* dest, int len);
+    int encode80(const uint8_t* src, std::ostream& dest, int len);
     
 } } //eastwood codec
 #endif	/* EASTWOOD_CODEC_FORMAT80_H */

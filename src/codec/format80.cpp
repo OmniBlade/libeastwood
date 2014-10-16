@@ -173,10 +173,10 @@ int xferCandidate(const uint8_t* start, int srcoffset, int len)
     return candidatelen;
 }
 
-int decode80(uint8_t* src, uint8_t* dest)
+int decode80(const uint8_t* src, uint8_t* dest)
 {
     uint8_t *writep = dest;
-    uint8_t *readp = src;
+    const uint8_t *readp = src;
     uint8_t *copyp;
 
     uint16_t count;
@@ -330,7 +330,7 @@ int decode80(std::istream& src, uint8_t* dest)
     return (writep - dest);
 }
 
-int encode80(uint8_t* src, uint8_t* dest, int len)
+int encode80(const uint8_t* src, uint8_t* dest, int len)
 {
     int srcoffset = 0;
     int destoffset = 0;
@@ -348,13 +348,14 @@ int encode80(uint8_t* src, uint8_t* dest, int len)
         uint16_t* offp = reinterpret_cast<uint16_t*>(&resultoff);
         uint16_t* cpyp = reinterpret_cast<uint16_t*>(&resultcopy);
         
-        int resultbest = std::max(offp[0], cpyp[0], resultfill, resultxfer);
+        int result1 = std::max(offp[0], cpyp[0]);
+        int resultbest = std::max(result1, std::max(resultfill, resultxfer));
         
         //method 4, fill
         if(resultbest == resultfill) {
             uint8_t colourval = src[srcoffset++];
-            int lefill = htole32(resultfill);
             
+            int lefill = htole32(resultfill);
             dest[destoffset++] = CMD_FILL;
             memcpy(dest + destoffset, reinterpret_cast<uint8_t*>(&lefill), 2);
             destoffset += 2;
@@ -363,19 +364,105 @@ int encode80(uint8_t* src, uint8_t* dest, int len)
             srcoffset += resultfill - 1;
             
         //method 1, offset copy    
-        } else if(resultbest == *reinterpret_cast<int16_t*>(&resultoff)) {
+        } else if(resultbest == offp[0]) {
             dest[destoffset++] = (CMD_OFFSET | ((offp[0] - 3) << 4) | (offp[1] >> 8));
+            
             uint16_t leoffp1 = htole16(offp[1]);
             dest[destoffset++] = *reinterpret_cast<uint8_t*>(&leoffp1);
-               
+            
+            srcoffset += offp[0];
+        } else if (resultbest == cpyp[0]) {
+            // method 3 - small copy
+            if (cpyp[0] <= CMD_COPY_S_MAX) {
+                dest[destoffset++] = CMD_COPY_S | (cpyp[0] - 3);
+                uint16_t lecpyp1 = htole16(cpyp[1]);
+                memcpy(dest + destoffset, reinterpret_cast<uint8_t*>(&lecpyp1), 2);
+                destoffset += 2;
+            // method 5 - large copy
+            } else {
+                dest[destoffset++] = CMD_COPY_L;
+                uint16_t lecpyp0 = htole16(cpyp[0]);
+                uint16_t lecpyp1 = htole16(cpyp[1]);
+                memcpy(dest + destoffset, reinterpret_cast<uint8_t*>(&lecpyp0), 2);
+                destoffset += 2;
+                memcpy(dest + destoffset, reinterpret_cast<uint8_t*>(&lecpyp1), 2);
+                destoffset += 2;
+            }
+            srcoffset += cpyp[0];
+        // method 2 bytes from source to dest
+        } else {
+            dest[destoffset++] = CMD_TRANSFER | resultxfer;
+            memcpy(dest + destoffset, src + srcoffset, resultxfer);
+            destoffset += resultxfer;
+            srcoffset += resultxfer;
         }
     }
-    
+    // format80 data must end with 0x80
+    dest[destoffset++] = CMD_TRANSFER;
+    //return length of data after compression
+    return destoffset;
 }
 
-int encode80(uint8_t* src, std::ostream& dest, int len)
+int encode80(const uint8_t* src, std::ostream& dest, int len)
 {
+    int srcoffset = 0;
+    OStream& _stream = reinterpret_cast<OStream&>(dest);
     
+    //start with transfer command
+    _stream.put(CMD_TRANSFER | 1);
+    
+    while(srcoffset < len){
+        //Select best method for coming bytes
+        int resultoff = offsetCopyCandidate(src, srcoffset, len);
+        int resultcopy = copyCandidate(src, srcoffset, len);
+        int resultfill = fillCandidate(src, srcoffset, len);
+        int resultxfer = xferCandidate(src, srcoffset, len);
+        //pointers to make accessing packed results easier
+        int16_t* offp = reinterpret_cast<int16_t*>(&resultoff);
+        int16_t* cpyp = reinterpret_cast<int16_t*>(&resultcopy);
+        
+        int result1 = std::max(offp[0], cpyp[0]);
+        int resultbest = std::max(result1, std::max(resultfill, resultxfer));
+        
+        //method 4, fill
+        if(resultbest == resultfill) {
+            uint8_t colourval = src[srcoffset++];
+            _stream.put(CMD_FILL);
+            _stream.putU16LE(resultfill);
+            _stream.put(colourval);
+            
+            srcoffset += resultfill - 1;
+            
+        //method 1, offset copy    
+        } else if(resultbest == offp[0]) {
+            _stream.put(CMD_OFFSET | ((offp[0] - 3) << 4) | (offp[1] >> 8));
+            uint16_t leoffp1 = htole16(offp[1]);
+            _stream.put(*reinterpret_cast<uint8_t*>(&leoffp1));
+            
+            srcoffset += offp[0];
+        } else if (resultbest == cpyp[0]) {
+            // method 3 - small copy
+            if (cpyp[0] <= CMD_COPY_S_MAX) {
+                _stream.put(CMD_COPY_S | (cpyp[0] - 3));
+                _stream.putU16LE(cpyp[1]);
+            // method 5 - large copy
+            } else {
+                _stream.put(CMD_COPY_L);
+                _stream.putU16LE(cpyp[0]);
+                _stream.putU16LE(cpyp[1]);
+            }
+            srcoffset += cpyp[0];
+        // method 2 bytes from source to dest
+        } else {
+            _stream.put(CMD_TRANSFER | resultxfer);
+            _stream.write(reinterpret_cast<const char*>(src + srcoffset), resultxfer);
+            srcoffset += resultxfer;
+        }
+    }
+    // format80 data must end with 0x80
+    _stream.put(CMD_TRANSFER);
+    //return length of data after compression
+    return _stream.tellp();
 }
 
 } } //eastwood codec
