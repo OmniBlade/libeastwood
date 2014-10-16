@@ -2,6 +2,7 @@ INCLUDE_DIRECTORIES(${LIBEASTWOOD_SOURCE_DIR}/include)
 
 
 SET( LIBEASTWOOD_SRCS
+  codec/format80.cpp
   AdlFile.cpp
   ArchiveManager.cpp
   BlowFish.cpp
