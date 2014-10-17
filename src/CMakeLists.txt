@@ -2,8 +2,11 @@ INCLUDE_DIRECTORIES(${LIBEASTWOOD_SOURCE_DIR}/include)
 
 
 SET( LIBEASTWOOD_SRCS
+  codec/base64.cpp
+  codec/format2.cpp
   codec/format40.cpp
   codec/format80.cpp
+  codec/rle.cpp
   AdlFile.cpp
   ArchiveManager.cpp
   BlowFish.cpp

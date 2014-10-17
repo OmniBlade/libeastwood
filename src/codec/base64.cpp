@@ -1,4 +1,5 @@
 #include "eastwood/codec/base64.h"
+#include "eastwood/Log.h"
 
 namespace eastwood { namespace codec {
 
@@ -21,16 +22,27 @@ const static char dtable[] = {
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
 
+const static char etable[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
+                              'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
+                              'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
+                              'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
+                              'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
+                              'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
+                              'w', 'x', 'y', 'z', '0', '1', '2', '3',
+                              '4', '5', '6', '7', '8', '9', '+', '/'};
+
+const static char PAD = '=';
+
 int decodeBase64(std::string src, uint8_t* dest)
 {
     uint32_t i;
     uint8_t a, b, c, d;
     int bits_to_skip = 0;
-    uint32_t varLength = len;
-    const int8_t* srcp = src.c_str();
+    uint32_t varLength = src.size();
+    const char* srcp = src.c_str();
     uint8_t* start = dest;
 
-    for( i = varLength-1; srcp[i] == '='; i-- ) {
+    for(i = varLength-1; srcp[i] == PAD; i--) {
         bits_to_skip += 2;
         varLength--;
     }
@@ -80,6 +92,44 @@ int decodeBase64(std::string src, uint8_t* dest)
 
     return dest - start;
 }
+
+std::string encodeBase64(uint8_t* src, int len)
+{
+    std::string encstring;
+    encstring.reserve(((len/3) + (len % 3 > 0)) * 4);
+    int temp;
+    uint8_t* cursor;
+    
+    for(int i = 0; i < len / 3; i++){
+        temp  = (*cursor++) << 16;
+        temp += (*cursor++) << 8;
+        temp += (*cursor++);
+        encstring.append(1,etable[(temp & 0x00FC0000) >> 18]);
+        encstring.append(1,etable[(temp & 0x0003F000) >> 12]);
+        encstring.append(1,etable[(temp & 0x00000FC0) >> 6 ]);
+        encstring.append(1,etable[(temp & 0x0000003F)      ]);    
+    }
+    
+    switch(len % 3) {
+    case 1:
+        temp = (*cursor++) << 16;
+        encstring.append(1,etable[(temp & 0x00FC0000) >> 18]);
+        encstring.append(1,etable[(temp & 0x0003F000) >> 12]);
+        encstring.append(2,PAD);
+        break;
+    case 2:
+        temp  = (*cursor++) << 16;
+        temp += (*cursor++) << 8;
+        encstring.append(1,etable[(temp & 0x00FC0000) >> 18]);
+        encstring.append(1,etable[(temp & 0x0003F000) >> 12]);
+        encstring.append(1,etable[(temp & 0x00000FC0) >> 6 ]);
+        encstring.append(1,PAD);
+        break;
+    default:
+        break;
+    }
+    
+    return encstring;
 }
 
 } } //eastwood codec
