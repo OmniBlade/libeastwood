@@ -58,7 +58,7 @@ int decodeBase64(std::string src, uint8_t* dest)
         c = dtable[srcp[2]];
         d = dtable[srcp[3]];
         if( a == 0x80 || b == 0x80 ||
-                c == 0x80 || d == 0x80 ) {
+            c == 0x80 || d == 0x80 ) {
             LOG_WARNING("Illegal character.");
         }
         dest[0] = a << 2 | b >> 4;
@@ -85,7 +85,7 @@ int decodeBase64(std::string src, uint8_t* dest)
             dest[1] = b << 4 | c >> 2;
         } else {
             LOG_WARNING("Error in base64. #bits to skip doesn't match length.");
-            LOG_WARNING("skip %d bits, %d chars left \"%s\"", bits_to_skip, varLength, src);
+            LOG_WARNING("skip %d bits, %d chars left \"%s\"", bits_to_skip, varLength, src.c_str());
             return -1;
         }
     }

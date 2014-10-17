@@ -9,6 +9,7 @@ SET( LIBEASTWOOD_SRCS
   codec/rle.cpp
   AdlFile.cpp
   ArchiveManager.cpp
+  BaseImage.cpp
   BlowFish.cpp
   CpsFile.cpp
   Decode.cpp
