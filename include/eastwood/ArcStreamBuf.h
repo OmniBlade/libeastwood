@@ -39,8 +39,6 @@ public:
             fseek(_fp, 0, SEEK_END);
             _eoffset = ftell(_fp);
             fseek(_fp, _soffset, SEEK_SET);
-        } else {
-            LOG_DEBUG("constructed stream with null file pointer");
         }
     }
     

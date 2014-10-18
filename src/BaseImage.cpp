@@ -33,4 +33,11 @@ void BaseImage::render(Surface& surface, int xpos, int ypos)
     }
 }
 
+void BaseImage::setDimensions(unsigned int width, unsigned int height)
+{
+    _width = width;
+    _height = height;
+    _bitmap.resize(_width * _height);
+}
+
 } //eastwood
