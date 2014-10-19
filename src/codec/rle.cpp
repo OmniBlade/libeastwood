@@ -28,9 +28,9 @@ int decodeRLE(std::istream& src, uint8_t* dest)
     return doffset;
 }
 
-int encodeRLE(const uint8_t *src, std::ostream& dest, int len)
+int encodeRLE(const uint8_t* src, std::ostream& dest, int len)
 {
-    OStream& _stream= reinterpret_cast<OStream&>(src);
+    OStream& _stream= reinterpret_cast<OStream&>(dest);
     int startpos = _stream.tellp();
     uint8_t pixel = src[0];
     uint8_t count = 1;

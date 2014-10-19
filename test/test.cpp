@@ -27,8 +27,8 @@ int main(int argc, char** argv)
     arcman.indexMix("rasub.mix", true);
     //IStream file(arcman.find("setup.dip"));
     IStream infile;
-    infile.open("palette.cps", std::ios_base::in | std::ios_base::binary);
-    CpsFile pal(infile);
+    infile.open("alibackh.pcx", std::ios_base::in | std::ios_base::binary);
+    PcxFile pal(infile);
     infile.close();
     Surface surf = pal.getSurface();
     OStream outfile;
@@ -38,9 +38,9 @@ int main(int argc, char** argv)
             surf.saveBMP(outfile);
         }
     outfile.close();
-    outfile.open("testing.cps", std::ios_base::out | std::ios_base::binary);
-    pal.writeCps(outfile);
-    outfile.close();
+    //outfile.open("testing.cps", std::ios_base::out | std::ios_base::binary);
+    //pal.writeCps(outfile);
+    //outfile.close();
     #if 0
     infile.open("mouse.shp", std::ios_base::in | std::ios_base::binary);
     if(infile.is_open()){
