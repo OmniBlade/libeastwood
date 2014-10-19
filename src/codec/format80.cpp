@@ -11,7 +11,7 @@ const int     CMD_TRANSFER_MAX = 63;	// 00111111, 0x3f
 // Offset copy command
 const uint8_t CMD_OFFSET = 0x00;           // 00000000
 const int     CMD_OFFSET_MAX = 10;         // -3 = 111, 0x07
-const int     CMD_OFFSET_THRESHOLD = 2;	// Must encode at least 3 bytes
+const int     CMD_OFFSET_THRESHOLD = 2;	// Must encode at least 3 uint8_ts
 const int     CMD_OFFSET_RANGE = 4095;	// 00001111 11111111, 0x0fff
 // Small copy command
 const uint8_t CMD_COPY_S = 0xc0;           // 11000000
@@ -39,67 +39,31 @@ static inline void my_memcpy(uint8_t *dst, const uint8_t *src, uint16_t cnt)
 	dst[i] = src[i];
 }
 
-void offsetCopyCandidate(const uint8_t* src, int srcoffset, int len, int* result)
+static inline void writeLE16(int16_t val, uint8_t*& writep)
 {
-    //int rv;
-    int coffset = srcoffset;
-    //readp
-    //offset to start of previous bytes within range
-    int doffset = coffset > CMD_OFFSET_RANGE ? CMD_OFFSET_RANGE : 0;
-    //donep
-    
-    int16_t candidatelen = 0;
-    int16_t candidatepos = -1;
-    
-    int pos = doffset;
-    while(coffset < len && doffset < srcoffset) {
-        //look for a match
-        int runlen = 0;
-        while(coffset < len && doffset < srcoffset && runlen < CMD_OFFSET_MAX) {
-            if(src[coffset++] == src[doffset++]) {
-                runlen++;
-            } else {
-                break;
-            }
-        }
-        
-        //reset our current pointer for another pass
-        coffset = srcoffset;
-        
-        //if we have a good length, set candidate details
-        if(runlen > candidatelen) {
-            candidatelen = runlen;
-            candidatepos = srcoffset - pos;
-        }
-        
-        doffset = ++pos;
-    }
-    
-    //pack results into a single int, assumes int is int32 or longer;
-    //int16_t* rvp = reinterpret_cast<int16_t*>(&rv);
-    result[0] = candidatelen > CMD_OFFSET_THRESHOLD ? candidatelen : 0;
-    result[1] = candidatepos;
-    
-    //return rv;
+    val = htole16(val);
+    *writep++ = val & 0xff;
+    *writep++ = val >> 8;
 }
 
-void copyCandidate(const uint8_t* start, int srcoffset, int len, int* result)
+int offsetCopyCandidate(const uint8_t* src, const uint8_t* readp, 
+                        const uint8_t* srcendp, const uint8_t*& pos)
 {
-    //int rv;
-    //current offset, this starts at srcoffset
-    int coffset = srcoffset;
-    //offset to start of processed or "done" bytes within range
-    int doffset = 0;
+    //pointer for evaluating previous uint8_ts
+    const uint8_t* checkpos = readp - src > CMD_OFFSET_RANGE ? readp - CMD_OFFSET_RANGE : src;
+    //pointer to mark where we started our reads from
+    const uint8_t* readstartp = readp;
     
-    int16_t candidatelen = 0;
-    int16_t candidatepos = -1;
+    //length of best evaluated run
+    int candidatelen = 0;
     
-    int pos = doffset;
-    while(coffset < len && doffset < srcoffset && pos < CMD_COPY_L_MAX){
+    //mark where we started checking previous uint8_ts from
+    const uint8_t* initpos = checkpos;
+    while(readp < srcendp && checkpos < readstartp) {
         //look for a match
         int runlen = 0;
-        while(coffset < len && doffset < srcoffset && runlen < CMD_COPY_L_MAX) {
-            if(start[coffset++] == start[doffset++]) {
+        while(readp < srcendp && checkpos < readstartp && runlen < CMD_OFFSET_MAX) {
+            if(*readp++ == *checkpos++) {
                 runlen++;
             } else {
                 break;
@@ -107,34 +71,72 @@ void copyCandidate(const uint8_t* start, int srcoffset, int len, int* result)
         }
         
         //reset our current pointer for another pass
-        coffset = srcoffset;
+        readp = readstartp;
         
         //if we have a good length, set candidate details
         if(runlen > candidatelen) {
             candidatelen = runlen;
-            candidatepos = pos;
+            //set the pointer we passed in to where we started this promising run
+            pos = initpos;
+        }
+        
+        //reset our checking pointer to the next uint8_t along
+        checkpos = ++initpos;
+    }
+    
+    return candidatelen > CMD_OFFSET_THRESHOLD ? candidatelen : 0;
+}
+
+int copyCandidate(const uint8_t* src, const uint8_t* readp, 
+                   const uint8_t* srcendp, const uint8_t*& pos)
+{
+    //pointer for evaluating previous uint8_ts
+    const uint8_t* checkpos = src;
+    //pointer to mark where we started our reads from
+    const uint8_t* readstartp = readp;
+    const uint8_t* checkendp = readstartp - src < CMD_COPY_L_MAX * 2 ? readstartp : src + CMD_COPY_L_MAX * 2;
+    
+    //length of best evaluated run
+    int candidatelen = 0;
+    
+    const uint8_t* initpos = checkpos;
+    
+    while(readp < srcendp && checkpos < checkendp && checkpos - src < CMD_COPY_L_MAX){
+        //look for a match
+        int runlen = 0;
+        while(readp < srcendp && checkpos < checkendp && runlen < CMD_COPY_L_MAX) {
+            if(*readp++ == *checkpos++) {
+                runlen++;
+            } else {
+                break;
+            }
+        }
+        
+        //reset our current pointer for another pass
+        readp = readstartp;
+        
+        //if we have a good length, set candidate details
+        if(runlen > candidatelen) {
+            candidatelen = runlen;
+            pos = initpos;
         }
         
         //increment the position we look at in already processed part
-        doffset = ++pos;
+        checkpos = ++initpos;
     }
     
-    //pack results into a single int, assumes int is int32 or longer;
-    //int16_t* rvp = reinterpret_cast<int16_t*>(&rv);
-    result[0] = candidatelen > CMD_OFFSET_THRESHOLD ? candidatelen : 0;
-    result[1] = candidatepos;
+    return candidatelen > CMD_COPY_S_THRESHOLD ? candidatelen : 0;
 }
 
-int fillCandidate(const uint8_t* start, int srcoffset, int len)
+int fillCandidate(const uint8_t* current, const uint8_t* end)
 {
     //current offset, this starts at srcoffset
-    int coffset = srcoffset;
     
     int candidatelen = 1;
-    uint8_t fillbyte = start[coffset++];
+    uint8_t filluint8_t = *current++;
     
-    while(coffset < len && candidatelen < CMD_FILL_MAX) {
-        if(fillbyte != start[coffset++]) {
+    while(current < end && candidatelen < CMD_FILL_MAX) {
+        if(filluint8_t != *current++) {
             break;
         }
         candidatelen++;
@@ -143,19 +145,16 @@ int fillCandidate(const uint8_t* start, int srcoffset, int len)
     return candidatelen > CMD_FILL_THRESHOLD ? candidatelen : 0;
 }
 
-int xferCandidate(const uint8_t* start, int srcoffset, int len)
-{
-    //current offset, this starts at srcoffset
-    int coffset = srcoffset;
-    
-    //find a long stretch of dissimilar bytes
+int xferCandidate(const uint8_t* current, const uint8_t* end)
+{   
+    //find a long stretch of dissimilar uint8_ts
     int candidatelen = 1;
     int runlen = 1;
-    uint8_t lastbyte = start[coffset++];
+    uint8_t lastuint8_t = *current++;
     
-    while(coffset < len && candidatelen < CMD_TRANSFER_MAX) {
-        uint8_t nextbyte = start[coffset++];
-        if(nextbyte == lastbyte) {
+    while(current < end && candidatelen < CMD_TRANSFER_MAX) {
+        uint8_t nextuint8_t = *current++;
+        if(nextuint8_t == lastuint8_t) {
             runlen++;
             if(runlen > CMD_FILL_THRESHOLD) {
                 candidatelen -= runlen - 2;
@@ -165,7 +164,7 @@ int xferCandidate(const uint8_t* start, int srcoffset, int len)
             runlen = 1;
         }
         candidatelen++;
-        lastbyte = nextbyte;
+        lastuint8_t = nextuint8_t;
     }
     
     return candidatelen;
@@ -258,12 +257,13 @@ int decode80(const uint8_t* src, uint8_t* dest)
 	    }
 	}
     }
-    return (writep - dest);
+    return writep - dest;
 }
 
 int decode80(std::istream& src, uint8_t* dest)
 {
     IStream& _stream= reinterpret_cast<IStream&>(src);
+
     uint8_t *writep = dest;
 
     uint16_t count,
@@ -325,165 +325,239 @@ int decode80(std::istream& src, uint8_t* dest)
 	    }
 	}
     }
-    return (writep - dest);
+    return writep - dest;
+}
+
+#if 0
+int encode80(const uint8_t* src, uint8_t* dest, int len)
+{
+    uint8_t* writep = dest;
+    const uint8_t* readp = src;
+    const uint8_t* srcendp = src + len;
+    //int srcoffset = readp - src;
+    
+    int temp[2];
+    
+    //start with transfer command
+    //*writep++ = CMD_TRANSFER | 1;
+    
+    while(readp < srcendp){
+        //Select best method for coming uint8_ts
+        const uint8_t* offposp = NULL;
+        int resultoff = offsetCopyCandidate(src, readp, srcendp, offposp);
+        //again copy results to temp
+        const uint8_t* cpyposp = NULL;
+        int resultcopy = copyCandidate(src, readp, srcendp, cpyposp);
+        //these only return one result so direct assign
+        int resultfill = fillCandidate(readp, srcendp);
+        int resultxfer = xferCandidate(readp, srcendp);
+        
+        LOG_DEBUG("offcopy len: %d pos: %d", resultoff, readp - offposp);
+        LOG_DEBUG("copy len: %d pos: %d", resultcopy, cpyposp - src);
+        LOG_DEBUG("fill len: %d", resultfill);
+        LOG_DEBUG("xfer len: %d", resultxfer);
+        
+        int resultbest = std::max(std::max(resultoff, resultcopy), 
+                                  std::max(resultfill, resultxfer));
+        
+        //method 4, fill
+        if(resultbest == resultfill) {
+            uint8_t colourval = *readp++;
+            
+            *writep++ = CMD_FILL;
+            writeLE16(resultfill, writep);
+            *writep++ = colourval;
+            
+            readp += resultfill;
+            
+        //method 1, offset copy    
+        } else if(resultbest == resultoff) {
+            int offpos = readp - offposp;
+            *writep++ = (resultoff - 3) << 4 | offpos >> 8;
+            *writep++ = offpos & 0xff;
+            
+            readp += resultoff;
+        } else if (resultbest == resultcopy) {
+            
+            int copypos = cpyposp - src;
+            
+            // method 3 - small copy
+            if (resultcopy <= CMD_COPY_S_MAX) {
+                *writep++ = CMD_COPY_S | (resultcopy - 3);
+                writeLE16(copypos, writep);
+            // method 5 - large copy
+            } else {
+                *writep++ = CMD_COPY_L;
+                writeLE16(resultcopy, writep);
+                writeLE16(copypos, writep);
+            }
+            readp += resultcopy;
+        // method 2 uint8_ts from source to writep
+        } else {
+            *writep++ = CMD_TRANSFER | resultxfer;
+            memcpy(writep, readp, resultxfer);
+            writep += resultxfer;
+            readp += resultxfer;
+        }
+        
+        //get our current offset in source
+        //srcoffset = readp - src;
+    }
+    // format80 data must end with 0x80
+    *writep++ = CMD_TRANSFER;
+    //return length of data after compression
+    return writep - dest;
+}
+#endif
+
+int get_same(const uint8_t* src, const uint8_t* readp, const uint8_t* srcendp, const uint8_t*& pos)
+{
+    //pointer for evaluating previous uint8_ts
+    const uint8_t* checkpos = src;
+    //pointer to mark where we started our reads from
+    const uint8_t* readstartp = readp;
+    const uint8_t* checkendp = readstartp;
+    
+    //length of best evaluated run
+    int candidatelen = 0;
+    
+    const uint8_t* initpos = checkpos;
+    
+    while(readp < srcendp && checkpos < checkendp){
+        //look for a match
+        int runlen = 0;
+        while(readp < srcendp && checkpos < checkendp) {
+            if(*readp++ == *checkpos++) {
+                runlen++;
+            } else {
+                break;
+            }
+        }
+        
+        //reset our current pointer for another pass
+        readp = readstartp;
+        
+        //if we have a good length, set candidate details
+        if(runlen > candidatelen) {
+            candidatelen = runlen;
+            pos = initpos;
+        }
+        
+        //increment the position we look at in already processed part
+        checkpos = ++initpos;
+    }
+    
+    return candidatelen;
+}
+
+int get_run_length(const uint8_t* r, const uint8_t* s_end)
+{
+	int count = 1;
+	int v = *r++;
+	while (r < s_end && *r++ == v)
+		count++;
+	return count;
+}
+
+static void write80_c0(uint8_t*& w, int count, int p)
+{
+    *w++ = (count - 3) << 4 | p >> 8;
+    *w++ = p & 0xff;
+}
+
+static void write80_c1(uint8_t*& w, int count, const uint8_t* r)
+{
+    do
+    {
+        int c_write = count < 0x40 ? count : 0x3f;
+        *w++ = 0x80 | c_write;
+        memcpy(w, r, c_write);
+        r += c_write;
+        w += c_write;
+        count -= c_write;
+    }
+    while (count);
+}
+
+static void write80_c2(uint8_t*& w, int count, int p)
+{
+    *w++ = 0xc0 | (count - 3);
+    writeLE16(p, w);
+}
+
+static void write80_c3(uint8_t*& w, int count, int v)
+{
+    *w++ = 0xfe;
+    writeLE16(count, w);
+    *w++ = v;
+}
+
+static void write80_c4(uint8_t*& w, int count, int p)
+{
+    *w++ = 0xff;
+    writeLE16(count, w);
+    writeLE16(p, w);
+}
+
+static void flush_c1(uint8_t*& w, const uint8_t* r, const uint8_t*& copy_from)
+{
+    if (copy_from)
+    {
+        write80_c1(w, r - copy_from, copy_from);
+        copy_from = NULL;
+    }
 }
 
 int encode80(const uint8_t* src, uint8_t* dest, int len)
 {
-    int srcoffset = 0;
-    int destoffset = 0;
-    
-    int temp[2];
-    
-    //start with transfer command
-    dest[destoffset++] = CMD_TRANSFER | 1;
-    
-    while(srcoffset < len){
-        //Select best method for coming bytes
-        //copy the two results to temp
-        offsetCopyCandidate(src, srcoffset, len, temp);
-        int resultoff = temp[0];
-        int resultoffpos = temp[1];
-        //again copy results to temp
-        copyCandidate(src, srcoffset, len, temp);
-        int resultcopy = temp[0];
-        int resultcopypos = temp[1];
-        //these only return one result so direct assign
-        int resultfill = fillCandidate(src, srcoffset, len);
-        int resultxfer = xferCandidate(src, srcoffset, len);
-        
-        LOG_DEBUG("offcopy len: %d pos: %d", resultoff, resultoffpos);
-        LOG_DEBUG("copy len: %d pos: %d", resultcopy, resultcopypos);
-        LOG_DEBUG("fill len: %d", resultfill);
-        LOG_DEBUG("xfer len: %d", resultfill);
-        
-        int result1 = std::max(resultoff, resultcopy);
-        int resultbest = std::max(result1, std::max(resultfill, resultxfer));
-        
-        //method 4, fill
-        if(resultbest == resultfill) {
-            uint8_t colourval = src[srcoffset++];
-            
-            int lefill = htole32(resultfill);
-            dest[destoffset++] = CMD_FILL;
-            memcpy(dest + destoffset, reinterpret_cast<uint8_t*>(&lefill), 2);
-            destoffset += 2;
-            dest[destoffset++] = colourval;
-            
-            srcoffset += resultfill - 1;
-            
-        //method 1, offset copy    
-        } else if(resultbest == resultoff) {
-            dest[destoffset++] = (CMD_OFFSET | ((resultoff - 3) << 4) | (resultoff >> 8));
-            
-            uint16_t leoffp1 = htole16(resultoffpos);
-            dest[destoffset++] = *reinterpret_cast<uint8_t*>(&leoffp1);
-            
-            srcoffset += resultoff;
-        } else if (resultbest == resultcopy) {
-            // method 3 - small copy
-            if (resultcopy <= CMD_COPY_S_MAX) {
-                dest[destoffset++] = CMD_COPY_S | (resultcopy - 3);
-                int32_t lecpyp1 = htole32(resultcopypos);
-                memcpy(dest + destoffset, reinterpret_cast<uint8_t*>(&lecpyp1), 2);
-                destoffset += 2;
-            // method 5 - large copy
-            } else {
-                dest[destoffset++] = CMD_COPY_L;
-                int32_t lecpyp0 = htole32(resultcopy);
-                int32_t lecpyp1 = htole32(resultcopypos);
-                memcpy(dest + destoffset, reinterpret_cast<uint8_t*>(&lecpyp0), 2);
-                destoffset += 2;
-                memcpy(dest + destoffset, reinterpret_cast<uint8_t*>(&lecpyp1), 2);
-                destoffset += 2;
+    // full compression
+    const uint8_t* s_end = src + len;
+    const uint8_t* readp = src;
+    uint8_t* writep = dest;
+    const uint8_t* copy_from = NULL;
+    while (readp < s_end)
+    {
+        const uint8_t* pos;
+        int blocksize = get_same(src, readp, s_end, pos);
+        int runlen = get_run_length(readp, s_end);
+        if (runlen < blocksize && blocksize > 2)
+        {
+            flush_c1(writep, readp, copy_from);
+            if (blocksize - 3 < 8 && readp - pos < 0x1000)
+                write80_c0(writep, blocksize, readp - pos);
+            else if (blocksize - 3 < 0x3e)
+                write80_c2(writep, blocksize, pos - src);
+            else 
+                write80_c4(writep, blocksize, pos - src);				
+            readp += blocksize;
+        }
+        else
+        {
+            if (runlen < 3)
+            {
+                if (!copy_from)
+                    copy_from = readp;
             }
-            srcoffset += resultcopy;
-        // method 2 bytes from source to dest
-        } else {
-            dest[destoffset++] = CMD_TRANSFER | resultxfer;
-            memcpy(dest + destoffset, src + srcoffset, resultxfer);
-            destoffset += resultxfer;
-            srcoffset += resultxfer;
+            else
+            {
+                flush_c1(writep, readp, copy_from);
+                write80_c3(writep, runlen, *readp);
+            }
+            readp += runlen;
         }
     }
-    // format80 data must end with 0x80
-    dest[destoffset++] = CMD_TRANSFER;
-    //return length of data after compression
-    return destoffset;
+    flush_c1(writep, readp, copy_from);
+    write80_c1(writep, 0, NULL);
+    return writep - dest;
 }
 
 int encode80(const uint8_t* src, std::ostream& dest, int len)
 {
-    int srcoffset = 0;
-    OStream& _stream = reinterpret_cast<OStream&>(dest);
-    int startpos = _stream.tellp();
-    int temp[2];
-    
-    //start with transfer command
-    _stream.put(CMD_TRANSFER | 1);
-    
-    while(srcoffset < len){
-        //Select best method for coming bytes
-        //copy the two results to temp
-        offsetCopyCandidate(src, srcoffset, len, temp);
-        int resultoff = temp[0];
-        int resultoffpos = temp[1];
-        //again copy results to temp
-        copyCandidate(src, srcoffset, len, temp);
-        int resultcopy = temp[0];
-        int resultcopypos = temp[1];
-        //these only return one result so direct assign
-        int resultfill = fillCandidate(src, srcoffset, len);
-        int resultxfer = xferCandidate(src, srcoffset, len);
-        
-        LOG_DEBUG("offcopy len: %d pos: %d", resultoff, resultoffpos);
-        LOG_DEBUG("copy len: %d pos: %d", resultcopy, resultcopypos);
-        LOG_DEBUG("fill len: %d", resultfill);
-        LOG_DEBUG("xfer len: %d", resultfill);
-        
-        int result1 = std::max(resultoff, resultcopy);
-        int resultbest = std::max(result1, std::max(resultfill, resultxfer));
-        
-        //method 4, fill
-        if(resultbest == resultfill) {
-            uint8_t colourval = src[srcoffset++];
-            _stream.put(CMD_FILL);
-            _stream.putU16LE(resultfill);
-            _stream.put(colourval);
-            
-            srcoffset += resultfill - 1;
-            
-        //method 1, offset copy    
-        } else if(resultbest == resultoff) {
-            _stream.put(CMD_OFFSET | ((resultoff - 3) << 4) | (resultoffpos >> 8));
-            int leoff = htole32(resultoffpos);
-            _stream.put(*reinterpret_cast<uint8_t*>(&leoff));
-            
-            srcoffset += resultoff;
-        } else if (resultbest == resultcopy) {
-            // method 3 - small copy
-            if (resultcopy <= CMD_COPY_S_MAX) {
-                _stream.put(CMD_COPY_S | (resultcopy - 3));
-                _stream.putU16LE(resultcopypos);
-            // method 5 - large copy
-            } else {
-                _stream.put(CMD_COPY_L);
-                _stream.putU16LE(resultcopy);
-                _stream.putU16LE(resultcopypos);
-            }
-            srcoffset += resultcopy;
-        // method 2 bytes from source to dest
-        } else {
-            _stream.put(CMD_TRANSFER | resultxfer);
-            _stream.write(reinterpret_cast<const char*>(src + srcoffset), resultxfer);
-            srcoffset += resultxfer;
-        }
-    }
-    // format80 data must end with 0x80
-    _stream.put(CMD_TRANSFER);
-    //return length of data after compression
-    int endpos = _stream.tellp();
-    return endpos - startpos;
+    OStream& _stream= reinterpret_cast<OStream&>(dest);
+    std::vector<uint8_t> buf(len);
+    int compressed = encode80(src, &buf.at(0), len);
+    _stream.write(reinterpret_cast<char*>(&buf.at(0)), compressed);
+    return compressed;
 }
 
 } } //eastwood codec

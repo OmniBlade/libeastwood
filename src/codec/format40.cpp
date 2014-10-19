@@ -32,6 +32,13 @@ const uint8_t CMD_XOR_L1 = 0x80;	// 10000000
 const uint16_t CMD_XOR_L2 = 0x8000;	// 10000000 00000000
 const int CMD_XOR_L_MAX = 16383;	// 00111111 11111111, 0x3fff
 
+static inline void writeLE16(int16_t val, uint8_t*& writep)
+{
+    val = htole16(val);
+    *writep++ = val & 0xff;
+    *writep++ = val >> 8;
+}
+
 int skipCandidate(const uint8_t* src, const uint8_t* base, int len)
 {
     int soffset = 0;
