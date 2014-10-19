@@ -2,7 +2,7 @@
 #define	EASTWOOD_PCXFILE_H
 
 #include "Palette.h"
-#include "Decode.h"
+#include "BaseImage.h"
 #include "IStream.h"
 
 namespace eastwood {
@@ -15,16 +15,17 @@ enum formatVersion {
     V30_STD = 0x05
 };
 
-class PcxFile : public Decode
+class PcxFile : public BaseImage
 {
     public:
 	PcxFile(std::istream &stream);
 	~PcxFile();
         
-        Surface getSurface();
+        Palette getPalette() { return _palette; }
+        void setPalette(Palette pal) { _palette = pal; }
+        void writePcx(std::ostream& stream);
 
     private:
-        void readHeader();
 	formatVersion _format;
 };
 

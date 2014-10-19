@@ -4,14 +4,13 @@ namespace eastwood { namespace codec {
 
 const uint8_t RLEMARK = 0xC0;
 
-int decodeRLE(std::istream& src, uint8_t* dest, int len)
+int decodeRLE(std::istream& src, uint8_t* dest)
 {
     IStream& _stream= reinterpret_cast<IStream&>(src);
     int startpos = _stream.tellg();
-    int endpos = startpos + len;
     int doffset = 0;
     
-    while(_stream.tellg() < endpos) {
+    while(!_stream.eof()) {
         uint8_t value = _stream.get();
         
         if((value & RLEMARK) == RLEMARK){

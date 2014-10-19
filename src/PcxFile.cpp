@@ -2,6 +2,7 @@
 #include "eastwood/StdDef.h"
 #include "eastwood/Exception.h"
 #include "eastwood/PalFile.h"
+#include "eastwood/codec/rle.h"
 
 
 namespace eastwood {
@@ -10,8 +11,9 @@ const uint8_t ZSOFT_SIG = 0x0A;    //zsoft pcx format signature
 const int OFFSET = 128;         //size of pcx header
 
 PcxFile::PcxFile(std::istream &stream):
-Decode(stream, 0, 0), _format(V30_STD)
+    BaseImage(0, 0, palette), _format(V30_STD)
 {
+    IStream& _stream= reinterpret_cast<IStream&>(stream);
     uint16_t x_min,
              y_min, 
              x_max, 
@@ -49,21 +51,14 @@ Decode(stream, 0, 0), _format(V30_STD)
     linebytes = _stream.getU16LE();
     _height = (y_max - y_min) + 1;
     _width = linebytes;
+    _bitmap.resize(_width * _height);
     
     _stream.seekg(_stream.sizeg() - 768, std::ios_base::beg);
     PalFile pal(_stream, true);
     _palette = pal.getPalette();
-}
-
-Surface PcxFile::getSurface()
-{
-    Surface pic(_width, _height, 8, _palette);
     
     _stream.seekg(OFFSET, std::ios_base::beg);
-    
-    decodeRLE(pic);
-
-    return pic;
+    codec::decodeRLE(_stream, &_bitmap.at(0));
 }
 
 PcxFile::~PcxFile() {

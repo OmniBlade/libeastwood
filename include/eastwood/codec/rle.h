@@ -7,7 +7,7 @@
 
 namespace eastwood { namespace codec {
 
-    int decodeRLE(std::istream& src, uint8_t* dest, int len);
+    int decodeRLE(std::istream& src, uint8_t* dest);
     int encodeRLE(uint8_t* src, std::ostream& dest, int len);
     
 } } //eastwood codec
