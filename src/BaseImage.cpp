@@ -1,14 +1,17 @@
 #include "eastwood/BaseImage.h"
+#include "eastwood/Palette.h"
 
 namespace eastwood {
 
+#if 0
 Surface BaseImage::getSurface()
 {
-    Surface surf(_width, _height, 8, _palette);
+    Surface surf(_width, _height, 8, Palette(0));
     memcpy(surf, &_bitmap.at(0), _bitmap.size());
     
     return surf;
 }
+#endif
 
 //simple straight blit to surface
 void BaseImage::render(Surface& surface, int xpos, int ypos)

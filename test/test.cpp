@@ -25,8 +25,13 @@ int main(int argc, char** argv)
     arcman.indexDir(".");
     arcman.indexMix("ratest.mix", true);
     arcman.indexMix("rasub.mix", true);
-    //IStream file(arcman.find("setup.dip"));
     IStream infile;
+    infile.open(arcman.find("setup.dip"));
+    if(infile.is_open()){
+        StringFile str(infile);
+        printf("String 5: %s\n", str.getString(5).c_str());
+    }
+    infile.close();
     infile.open("alibackh.pcx", std::ios_base::in | std::ios_base::binary);
     PcxFile pal(infile);
     infile.close();

@@ -1,27 +1,10 @@
 #include "eastwood/WsKey.h"
+#include "eastwood/codec/base64.h"
 #include <cstring>
 
 namespace eastwood {
 
 const char *pubkey_str = "AihRvNoIbTn85FZRYNZRcT+i6KpU+maCsEqr3Q5q+LDB5tH7Tz2qQ38V";
-
-const static char char2num[] = {
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63,
-    52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1, -1, -1, -1, -1, -1,
-    -1,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14,
-    15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1, -1, -1,
-    -1, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
-    41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1,
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
 
 typedef uint32_t bignum4[4];
 typedef uint32_t bignum[64];
@@ -111,19 +94,7 @@ static void init_pubkey()
     char keytmp[256];
 
     init_bignum(pubkey.key2, 0x10001, 64);
-
-    i = 0;
-    i2 = 0;
-    while (i < strlen(pubkey_str))
-    {
-        tmp = char2num[(int)pubkey_str[i++]];
-        tmp <<= 6; tmp |= char2num[(int)pubkey_str[i++]];
-        tmp <<= 6; tmp |= char2num[(int)pubkey_str[i++]];
-        tmp <<= 6; tmp |= char2num[(int)pubkey_str[i++]];
-        keytmp[i2++] = (tmp >> 16) & 0xff;
-        keytmp[i2++] = (tmp >> 8) & 0xff;
-        keytmp[i2++] = tmp & 0xff;
-    }
+    codec::decodeBase64(pubkey_str, (uint8_t*)keytmp);
     key_to_bignum(pubkey.key1, keytmp, 64);
     pubkey.len = bitlen_bignum(pubkey.key1, 64) - 1;
 }

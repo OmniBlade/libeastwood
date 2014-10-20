@@ -12,11 +12,9 @@ const int OFFSET = 128;         //size of pcx header
 const uint16_t DPI = 300;
 
 PcxFile::PcxFile(std::istream &stream):
-    BaseImage(0, 0, Palette()), _header()
+    BaseImage(0, 0), _header(), _palette(0)
 {
     IStream& _stream= reinterpret_cast<IStream&>(stream);
-    
-    LOG_DEBUG("Header struct is %d bytes, should be %d", sizeof(PcxHeader), OFFSET);
     
     _header.sig = _stream.get();
     if(_header.sig != ZSOFT_SIG)
@@ -42,8 +40,6 @@ PcxFile::PcxFile(std::istream &stream):
     _header.hres = _stream.getU16LE();
     _header.vres = _stream.getU16LE();
     
-    LOG_DEBUG("hres: %d, vres: %d", _header.hres, _header.vres);
-    
     //get resolution and 16 color palette
     _stream.read(reinterpret_cast<char*>(_header.pal16), 48);
     _header.res = _stream.get();
@@ -59,10 +55,6 @@ PcxFile::PcxFile(std::istream &stream):
     //resize out bitmap to match expected
     _bitmap.resize(_width * _height);
     _header.paltype = _stream.getU16LE();
-    
-    LOG_DEBUG("bytes per line: %d, paltype %d", _header.bpl, _header.paltype);
-    //if(_header.paltype != 1)
-    //    throw(Exception(LOG_ERROR, "PcxFile", "Palette types other than 1 not supported"));
     
     //fetch pal from end of file
     _stream.seekg(_stream.sizeg() - 768, std::ios_base::beg);
@@ -106,6 +98,13 @@ void PcxFile::writeHeader(std::ostream& stream)
     _stream.putU16LE(_header.bpl);
     _stream.putU16LE(_header.paltype);
     _stream.seekp(58, std::ios_base::cur);
+}
+
+Surface PcxFile::getSurface() {
+    Surface surf(_width, _height, 8, _palette);
+    memcpy(surf, &_bitmap.at(0), _bitmap.size());
+    
+    return surf;
 }
 
 } //eastwood

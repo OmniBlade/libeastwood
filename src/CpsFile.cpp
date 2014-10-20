@@ -13,7 +13,7 @@
 namespace eastwood {
 
 CpsFile::CpsFile(std::istream &stream, Palette palette) :
-    BaseImage(320, 200, palette), _format(UNCOMPRESSED)
+    BaseImage(320, 200), _format(UNCOMPRESSED), _palette(palette)
 {
     IStream& _stream= reinterpret_cast<IStream&>(stream);
     
@@ -82,6 +82,13 @@ void CpsFile::writeCps(std::ostream& stream)
     _stream.seekp(0, std::ios_base::beg);
     _stream.putU16LE(fsize - 2);
     
+}
+
+Surface CpsFile::getSurface() {
+    Surface surf(_width, _height, 8, _palette);
+    memcpy(surf, &_bitmap.at(0), _bitmap.size());
+    
+    return surf;
 }
 
 }
