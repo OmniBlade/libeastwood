@@ -16,6 +16,8 @@ PcxFile::PcxFile(std::istream &stream):
 {
     IStream& _stream= reinterpret_cast<IStream&>(stream);
     
+    LOG_DEBUG("Header struct is %d bytes, should be %d", sizeof(PcxHeader), OFFSET);
+    
     _header.sig = _stream.get();
     if(_header.sig != ZSOFT_SIG)
         throw(Exception(LOG_ERROR, "PcxFile", "Not a zSoft PCX"));
@@ -79,7 +81,7 @@ PcxFile::~PcxFile() {
 void PcxFile::writePcx(std::ostream& stream)
 {
     writeHeader(stream);
-    int rv = codec::encodeRLE(&_bitmap.at(0), stream, _bitmap.size());
+    codec::encodeRLE(&_bitmap.at(0), stream, _width, _height);
     _palette.savePAL(stream, true);
 }
 

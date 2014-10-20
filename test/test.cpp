@@ -32,10 +32,11 @@ int main(int argc, char** argv)
     infile.close();
     Surface surf = pal.getSurface();
     OStream outfile;
-    outfile.open("testing.bmp", std::ios_base::out | std::ios_base::binary);
+    outfile.open("testing.pcx", std::ios_base::out | std::ios_base::binary);
     if(outfile.is_open()){
             LOG_INFO("Out stream is open");
-            surf.saveBMP(outfile);
+            //surf.saveBMP(outfile);
+            pal.writePcx(outfile);
         }
     outfile.close();
     //outfile.open("testing.cps", std::ios_base::out | std::ios_base::binary);

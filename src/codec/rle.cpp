@@ -28,33 +28,50 @@ int decodeRLE(std::istream& src, uint8_t* dest)
     return doffset;
 }
 
-int encodeRLE(const uint8_t* src, std::ostream& dest, int len)
+int encodeRLE(const uint8_t* src, std::ostream& dest, int _x, int y)
 {
     OStream& _stream= reinterpret_cast<OStream&>(dest);
     int startpos = _stream.tellp();
-    uint8_t pixel = src[0];
-    uint8_t count = 1;
-    uint8_t next = src[0];
+    const uint8_t* readp = src;
+    //uint8_t pixel = *readp++;
     
-    for(int i = 1; i < len; i++){
-        next = src[i];
-        if(pixel == next) {
-            count++;
-            pixel = next;
-        }
+    _x--;
+    while(y--) {
+        int count = 1;
+        int x = _x;
+        uint8_t last = *readp++;
         
-        if(count == 63 || pixel != next) {
-            if(pixel < 0xC0 && count == 1){
-                dest.put(pixel);
+        while(x--) {
+            uint8_t cur = *readp++;
+            if(last == cur) {
+                count++;
             } else {
-                dest.put(count & 0xC0);
                 while(count){
-                    dest.put(pixel);
-                    count--;
+                    if (count == 1 && last < 0xc0) {
+                        _stream.put(last);
+                        count = 0;
+                    } else {
+                        const int c_write = count > 63 ? 63 : count;
+                        _stream.put(0xc0 | c_write);
+                        _stream.put(last);
+                        count -= c_write;
+                    }
                 }
+                count = 1;
+                last = cur;
             }
-            pixel = next;
-            count = 1;
+            
+        }
+        while(count){
+            if (count == 1 && last < 0xC0) {
+                _stream.put(last);
+                count = 0;
+            } else {
+                const int c_write = count > 63 ? 63 : count;
+                _stream.put(0xc0 | c_write);
+                _stream.put(last);
+                count -= c_write;
+            }
         }
     }
     

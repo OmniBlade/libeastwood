@@ -10,6 +10,8 @@ Palette::Palette(uint16_t colors) : _palette(colors)
 bool Palette::savePAL(std::ostream &output, bool fullpal)
 {
     if(fullpal) {
+        //full pal currently only used for pcx, needs this marker.
+        output.put(0x0C);
         for (uint16_t i = 0; i < _palette.size(); i++){
             output.put(_palette[i].r);
             output.put(_palette[i].g);
