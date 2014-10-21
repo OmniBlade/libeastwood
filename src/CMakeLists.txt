@@ -6,6 +6,7 @@ SET( LIBEASTWOOD_SRCS
   codec/format2.cpp
   codec/format40.cpp
   codec/format80.cpp
+  codec/lcw.cpp
   codec/rle.cpp
   AdlFile.cpp
   ArchiveManager.cpp

@@ -12,7 +12,7 @@ const int OFFSET = 128;         //size of pcx header
 const uint16_t DPI = 300;
 
 PcxFile::PcxFile(std::istream &stream):
-    BaseImage(0, 0), _header(), _palette(0)
+    BaseImage(), _header(), _palette(0)
 {
     IStream& _stream= reinterpret_cast<IStream&>(stream);
     
@@ -64,10 +64,6 @@ PcxFile::PcxFile(std::istream &stream):
     //decode image from end of header
     _stream.seekg(OFFSET, std::ios_base::beg);
     codec::decodeRLE(_stream, &_bitmap.at(0));
-}
-
-PcxFile::~PcxFile() {
-    
 }
 
 void PcxFile::writePcx(std::ostream& stream)

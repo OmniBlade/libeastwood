@@ -3,8 +3,8 @@
 
 #include "eastwood/BaseImage.h"
 #include "eastwood/Palette.h"
-#include "eastwood/IStream.h"
-#include "eastwood/OStream.h"
+#include <istream>
+#include <ostream>
 
 namespace eastwood {
 
@@ -22,8 +22,10 @@ class CpsFile : public BaseImage
         Palette getPalette() { return _palette; }
         void setPalette(Palette pal) { _palette = pal; }
         void writeCps(std::ostream& stream);
+        Surface getSurface();
     private:
 	compressionFormat _format;
+        Palette _palette;
 
 };
 

@@ -20,7 +20,7 @@ public:
         _palette(0) {}
     virtual ~BaseImage() {}
     
-    virtual Surface getSurface();
+    //virtual Surface getSurface();
     virtual void render(Surface& surface, int xpos, int ypos);
     virtual operator uint8_t*() { return &_bitmap.at(0); }
     virtual operator void*() { return &_bitmap.at(0); }

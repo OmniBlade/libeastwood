@@ -515,6 +515,8 @@ int encode80(const uint8_t* src, uint8_t* dest, int len)
     const uint8_t* readp = src;
     uint8_t* writep = dest;
     const uint8_t* copy_from = NULL;
+    *writep++ = -127;
+    *writep++ = *readp++;    
     while (readp < s_end)
     {
         const uint8_t* pos;

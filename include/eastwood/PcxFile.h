@@ -19,35 +19,35 @@ class PcxFile : public BaseImage
 {
 private:
     struct PcxHeader {
-            uint8_t sig;
-            uint8_t ver;
-            uint8_t enc;
-            uint8_t bpp;
-            uint16_t xmin;
-            uint16_t ymin;
-            uint16_t xmax;
-            uint16_t ymax;
-            uint16_t hres;
-            uint16_t vres;
-            uint8_t pal16[48];
-            uint8_t res;
-            uint8_t planes;
-            uint16_t bpl;
-            uint16_t paltype;
-            uint8_t dummy[58];
-        };
+        uint8_t sig;
+        uint8_t ver;
+        uint8_t enc;
+        uint8_t bpp;
+        uint16_t xmin;
+        uint16_t ymin;
+        uint16_t xmax;
+        uint16_t ymax;
+        uint16_t hres;
+        uint16_t vres;
+        uint8_t pal16[48];
+        uint8_t res;
+        uint8_t planes;
+        uint16_t bpl;
+        uint16_t paltype;
+        uint8_t dummy[58];
+    };
         
 public:
     PcxFile(std::istream &stream);
-    ~PcxFile();
 
     Palette getPalette() { return _palette; }
     void setPalette(Palette pal) { _palette = pal; }
     void writePcx(std::ostream& stream);
-
+    Surface getSurface();
 private:
     void writeHeader(std::ostream& stream);
     PcxHeader _header;
+    Palette _palette;
 };
 
 }

@@ -8,7 +8,8 @@
 namespace eastwood { namespace codec {
 
     int decodeLCW(const uint8_t* source, uint8_t* dest, int destsize);
-    int encodeLcw(const uint8_t* src, uint8_t* dest, int datasize);
+    int encodeLCW(const uint8_t* src, uint8_t* dest, int datasize);
+    int encodeLCW(const uint8_t* src, std::ostream& dest, int len);
     
 } } //eastwood codec
     

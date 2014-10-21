@@ -1,14 +1,15 @@
-#include <iostream>
 #include <string>
 #include <vector>
 
-#include "eastwood/StdDef.h"
-
 #include "eastwood/CpsFile.h"
+#include "eastwood/StdDef.h"
+#include "eastwood/IStream.h"
+#include "eastwood/OStream.h"
 #include "eastwood/Exception.h"
 #include "eastwood/Log.h"
 #include "eastwood/PalFile.h"
 #include "eastwood/codec/format80.h"
+#include "eastwood/codec/lcw.h"
 
 namespace eastwood {
 
@@ -48,6 +49,7 @@ CpsFile::CpsFile(std::istream &stream, Palette palette) :
 	throw(Exception(LOG_ERROR, "CpsFile", "No palette provided as argument or embedded in CPS"));
     
     int checksum;
+    std::vector<uint8_t> buffer;
     switch(_format) {
 	case UNCOMPRESSED:
 	    _stream.read(reinterpret_cast<char*>(&_bitmap.at(0)), _bitmap.size());
@@ -57,7 +59,10 @@ CpsFile::CpsFile(std::istream &stream, Palette palette) :
 	    throw(Exception(LOG_ERROR, "CpsFile", "LBM format not yet supported"));
 	    break;
 	case FORMAT_80:
-            checksum = codec::decode80(_stream, &_bitmap.at(0));
+            while(!_stream.eof()){
+                buffer.push_back(_stream.get());
+            }
+            checksum = codec::decodeLCW(&buffer.at(0), &_bitmap.at(0), _bitmap.size());
             if(checksum != _bitmap.size()) {
                 LOG_ERROR("Decode80 return %d did not match expected size %d", checksum, _bitmap.size());
                 throw(Exception(LOG_ERROR, "CpsFile", "Cannot decode Cps-File"));

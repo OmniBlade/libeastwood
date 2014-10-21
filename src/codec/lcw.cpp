@@ -1,10 +1,12 @@
 #include "eastwood/codec/lcw.h"
-#include "eastwood/Exception.h"
+#include "eastwood/Log.h"
+#include "eastwood/OStream.h"
 
 #include <algorithm>
+#include <vector>
 
 namespace eastwood { namespace codec {
-
+    
 int decodeLCW(const uint8_t* source, uint8_t* dest, int destsize)
 {
     uint8_t *start = dest;
@@ -30,7 +32,10 @@ int decodeLCW(const uint8_t* source, uint8_t* dest, int destsize)
         }
 
         /* Exit */
-        if (flag == 0x80) break;
+        if (flag == 0x80) {
+            LOG_DEBUG("End of lcw data reached");
+            break;
+        }
 
         /* Long set */
         if (flag == 0xFE) {
@@ -70,7 +75,7 @@ int decodeLCW(const uint8_t* source, uint8_t* dest, int destsize)
             offset = *source++;
             offset += (*source++) << 8;
 
-            s = end - destLength + offset;
+            s = end - destsize + offset;
             /* This decoder assumes memcpy. As some platforms implement memcpy as memmove, this is much safer */
             for (; size > 0; size--) *dest++ = *s++;
             continue;
@@ -90,38 +95,38 @@ int decodeLCW(const uint8_t* source, uint8_t* dest, int destsize)
     return dest - start;
 }
 
-int LCW_Comp(char *srcp, char* destp, int datasize)
+int LCW_Comp(char* srcp, char* destp, int datasize)
 {
   char* readp; // esi@1
   char* writep; // edi@1
-  int v5; // edi@2
+  char* v5; // edi@2
   char v6; // al@3
-  int v7; // ebx@4
-  int v8; // edi@4
+  char* v7; // ebx@4
+  char* v8; // edi@4
   int v9; // ecx@4
-  int v10; // edi@7
+  char* v10; // edi@7
   int16_t v11; // cx@7
-  char v12; // zf@10
+  bool v12; // zf@10
   int v13; // ecx@10
-  int v14; // edx@15
-  int v15; // ebx@15
-  int v16; // edi@15
+  char* v14; // edx@15
+  char* v15; // ebx@15
+  char* v16; // edi@15
   char v17; // zf@15
   int v18; // ecx@15
   int v19; // eax@20
-  int v20; // edi@22
+  char* v20; // edi@22
   int16_t v21; // ax@24
   int16_t v22; // ax@25
   char v23; // t1@25
   char v24; // al@31
   char* destmark1p; // [sp+14h] [bp-24h]@1
-  int v27; // [sp+18h] [bp-20h]@1
+  char* v27; // [sp+18h] [bp-20h]@1
   char* srcmarkp; // [sp+20h] [bp-18h]@1
   char* destmark2p; // [sp+24h] [bp-14h]@1
   char* endp; // [sp+28h] [bp-10h]@1
   signed int v31; // [sp+2Ch] [bp-Ch]@2
   signed int v32; // [sp+30h] [bp-8h]@1
-  int writemakerp; // [sp+34h] [bp-4h]@2
+  char* writemakerp; // [sp+34h] [bp-4h]@2
 
   v27 = 0;
   endp = datasize + srcp;
@@ -129,10 +134,10 @@ int LCW_Comp(char *srcp, char* destp, int datasize)
   destmark1p = destp;
   srcmarkp = srcp;
   destmark2p = destp;
-  *destp = -127;
-  readp = srcp + 1;
-  *(destp + 1) = *srcp;
-  writep = destp + 2;
+  writep = destp
+  *writep++ = -127;
+  readp = srcp;
+  *writep++ = *readp++;
   do
   {
     writemakerp = writep;
@@ -151,13 +156,14 @@ LABEL_3:
       {
         if ( !v9 )
           break;
-        v12 = *v8++ == v6;
+        v12 = (*v8++) == v6;
         --v9;
       }
       while ( v12 );
       v10 = v8 - 1;
       v11 = v10 - readp;
-      if ( (v10 - readp) < 0x41 )
+      //if ( (v10 - readp) < 0x41 )
+      if ( v11 < 0x41 )
       {
         v5 = v7;
         break;
@@ -268,7 +274,16 @@ LABEL_35:
   return writep + 1 - destmark1p;
 }
 
-int encodeLcw(const uint8_t* src, uint8_t* dest, int datasize)
+int encodeLCW(const uint8_t* src, std::ostream& dest, int len)
+{
+    OStream& _stream= reinterpret_cast<OStream&>(dest);
+    std::vector<uint8_t> buf(len);
+    int compressed = LCW_Comp((char*)src, (char*)(&buf.at(0)), len);
+    _stream.write(reinterpret_cast<char*>(&buf.at(0)), compressed);
+    return compressed;
+}
+
+int encodeLCW(const uint8_t* src, uint8_t* dest, int datasize)
 {
     
 }
