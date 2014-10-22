@@ -100,7 +100,7 @@ int LCW_Comp(char* srcp, char* destp, int datasize)
   char* readp; // esi@1
   char* writep; // edi@1
   char* v5; // edi@2
-  char v6; // al@3
+  char runlencalc_startp; // al@3
   char* v7; // ebx@4
   char* v8; // edi@4
   int v9; // ecx@4
@@ -119,7 +119,7 @@ int LCW_Comp(char* srcp, char* destp, int datasize)
   int16_t v22; // ax@25
   char v23; // t1@25
   char v24; // al@31
-  char* destmark1p; // [sp+14h] [bp-24h]@1
+  char* deststartp; // [sp+14h] [bp-24h]@1
   char* v27; // [sp+18h] [bp-20h]@1
   char* srcmarkp; // [sp+20h] [bp-18h]@1
   char* destmark2p; // [sp+24h] [bp-14h]@1
@@ -131,22 +131,21 @@ int LCW_Comp(char* srcp, char* destp, int datasize)
   v27 = 0;
   endp = datasize + srcp;
   v32 = 1;
-  destmark1p = destp;
+  deststartp = destp;
   srcmarkp = srcp;
   destmark2p = destp;
-  writep = destp
-  *writep++ = -127;
+  writep = destp;
+  //*writep++ = -127;
   readp = srcp;
-  *writep++ = *readp++;
-  do
-  {
+  //*writep++ = *readp++;
+  while ( readp < endp ) {
     writemakerp = writep;
     v5 = srcmarkp;
     v31 = 1;
 LABEL_3:
     while ( 1 )
     {
-      v6 = *readp;
+      runlencalc_startp = *readp;
       if ( *readp != *(readp + 64) )
         break;
       v7 = v5;
@@ -156,7 +155,7 @@ LABEL_3:
       {
         if ( !v9 )
           break;
-        v12 = (*v8++) == v6;
+        v12 = (*v8++) == runlencalc_startp;
         --v9;
       }
       while ( v12 );
@@ -172,7 +171,7 @@ LABEL_3:
       readp = v10;
       *writemakerp = -2;
       *(writemakerp + 1) = v11;
-      *(writemakerp + 3) = v6;
+      *(writemakerp + 3) = runlencalc_startp;
       writemakerp += 4;
       v5 = v7;
     }
@@ -186,7 +185,7 @@ LABEL_3:
       {
         if ( !v13 )
           break;
-        v12 = *v5++ == v6;
+        v12 = *v5++ == runlencalc_startp;
         --v13;
       }
       while ( !v12 );
@@ -269,9 +268,8 @@ LABEL_30:
 LABEL_35:
     ;
   }
-  while ( readp < endp );
-  *writep = -128;
-  return writep + 1 - destmark1p;
+  *writep++ = -128;
+  return writep - deststartp;
 }
 
 int encodeLCW(const uint8_t* src, std::ostream& dest, int len)
