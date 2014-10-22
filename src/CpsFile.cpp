@@ -52,7 +52,7 @@ CpsFile::CpsFile(std::istream &stream, Palette palette) :
     std::vector<uint8_t> buffer;
     switch(_format) {
 	case UNCOMPRESSED:
-	    _stream.read(reinterpret_cast<char*>(&_bitmap.at(0)), _bitmap.size());
+	    _stream.read(_pixels, _height * _width);
 	    break;
 	case FORMAT_LBM:
 	    //TODO: implement?
@@ -62,9 +62,9 @@ CpsFile::CpsFile(std::istream &stream, Palette palette) :
             while(!_stream.eof()){
                 buffer.push_back(_stream.get());
             }
-            checksum = codec::decodeLCW(&buffer.at(0), &_bitmap.at(0), _bitmap.size());
-            if(checksum != _bitmap.size()) {
-                LOG_ERROR("Decode80 return %d did not match expected size %d", checksum, _bitmap.size());
+            checksum = codec::decodeLCW(&buffer.at(0), *_pixels.get(), _height * _width);
+            if(checksum != _height * _width) {
+                LOG_ERROR("Decode80 return %d did not match expected size %d", checksum, _height * _width);
                 throw(Exception(LOG_ERROR, "CpsFile", "Cannot decode Cps-File"));
             }
             break;
@@ -79,10 +79,10 @@ void CpsFile::writeCps(std::ostream& stream)
     //write 0 for size, correct to filesize - 2 later after encode
     _stream.putU16LE(0);
     _stream.putU16LE(_format);
-    _stream.putU32LE(_bitmap.size());
-    _stream.putU16LE(_palette.size() * 3);
+    _stream.putU32LE(_height * _width);
+    _stream.putU16LE(_height * _width * 3);
     if(_palette.size() == 256) _palette.savePAL(_stream);
-    codec::encode80(&_bitmap.at(0), _stream, _bitmap.size());
+    codec::encode80(*_pixels.get(), _stream, _height * _width);
     uint16_t fsize = _stream.tellp();
     _stream.seekp(0, std::ios_base::beg);
     _stream.putU16LE(fsize - 2);
@@ -91,7 +91,7 @@ void CpsFile::writeCps(std::ostream& stream)
 
 Surface CpsFile::getSurface() {
     Surface surf(_width, _height, 8, _palette);
-    memcpy(surf, &_bitmap.at(0), _bitmap.size());
+    memcpy(surf, *_pixels.get(), _height * _width);
     
     return surf;
 }

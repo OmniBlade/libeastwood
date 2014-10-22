@@ -95,6 +95,64 @@ int decodeLCW(const uint8_t* source, uint8_t* dest, int destsize)
     return dest - start;
 }
 
+void applyXorDelta(const uint8_t* source , uint8_t* dest)
+{
+    while (true) {
+        uint16_t flag;
+
+        flag = *source++;
+
+        if (flag == 0) {
+            flag = *source++;
+            for (; flag > 0; flag--) {
+                *dest++ ^= *source;
+            }
+            source++;
+
+            continue;
+        }
+
+        if ((flag & 0x80) == 0) {
+            for (; flag > 0; flag--) {
+                *dest++ ^= *source++;
+            }
+            continue;
+        }
+
+        if (flag != 0x80) {
+            dest += flag & 0x7F;
+            continue;
+        }
+
+        flag = *source++;
+        flag += (*source++) << 8;
+
+        if (flag == 0) break;
+
+        if ((flag & 0x8000) == 0) {
+            dest += flag;
+            continue;
+        }
+
+        if ((flag & 0x4000) == 0) {
+            flag &= 0x3FFF;
+            for (; flag > 0; flag--) {
+                *dest++ ^= *source++;
+            }
+            continue;
+        }
+
+        flag &= 0x3FFF;
+        for (; flag > 0; flag--) {
+                *dest++ ^= *source;
+        }
+        source++;
+        continue;
+    }
+}
+
+#if 0
+//hexrays dump of encoding function from TS
 int LCW_Comp(char* srcp, char* destp, int datasize)
 {
   char* readp; // esi@1
@@ -271,19 +329,326 @@ LABEL_35:
   *writep++ = -128;
   return writep - deststartp;
 }
+#endif
 
 int encodeLCW(const uint8_t* src, std::ostream& dest, int len)
 {
     OStream& _stream= reinterpret_cast<OStream&>(dest);
     std::vector<uint8_t> buf(len);
-    int compressed = LCW_Comp((char*)src, (char*)(&buf.at(0)), len);
+    int compressed = encodeLCW(src, &buf.at(0), len);
     _stream.write(reinterpret_cast<char*>(&buf.at(0)), compressed);
     return compressed;
 }
 
+//anon namespace for encodelcw helpers
+namespace {
+
+//helper to write bytes in the correct order as lcw is little endian
+inline void writeLE16(int16_t val, uint8_t*& writep)
+{
+    val = htole16(val);
+    *writep++ = val & 0xff;
+    *writep++ = val >> 8;
+}
+
+//find a run of pixels nearer the start that matches the current run
+//returns run length and sets passed pos pointer to start of run
+int get_same(const uint8_t* src, const uint8_t* readp, const uint8_t* srcendp, const uint8_t*& pos)
+{
+    //pointer for evaluating previous uint8_ts
+    const uint8_t* checkpos = src;
+    //pointer to mark where we started our reads from
+    const uint8_t* readstartp = readp;
+    const uint8_t* checkendp = readstartp;
+    
+    //length of best evaluated run
+    int candidatelen = 0;
+    
+    const uint8_t* initpos = checkpos;
+    
+    while(readp < srcendp && checkpos < checkendp){
+        //look for a match
+        int runlen = 0;
+        while(readp < srcendp && checkpos < checkendp) {
+            if(*readp++ == *checkpos++) {
+                runlen++;
+            } else {
+                break;
+            }
+        }
+        
+        //reset our current pointer for another pass
+        readp = readstartp;
+        
+        //if we have a good length, set candidate details
+        if(runlen > candidatelen) {
+            candidatelen = runlen;
+            pos = initpos;
+        }
+        
+        //increment the position we look at in already processed part
+        checkpos = ++initpos;
+    }
+    
+    return candidatelen;
+}
+
+//get number of pixels that are the same from this pos
+static int get_run_length(const uint8_t* r, const uint8_t* s_end)
+{
+	int count = 1;
+	int v = *r++;
+	while (r < s_end && *r++ == v)
+		count++;
+	return count;
+}
+
+inline void write80_c0(uint8_t*& w, int count, int p)
+{
+    //command 2
+    *w++ = (count - 3) << 4 | p >> 8;
+    *w++ = p & 0xff;
+}
+
+inline void write80_c1(uint8_t*& w, int count, const uint8_t* r)
+{
+    //command 1
+    do
+    {
+        int c_write = count < 0x40 ? count : 0x3f;
+        *w++ = 0x80 | c_write;
+        memcpy(w, r, c_write);
+        r += c_write;
+        w += c_write;
+        count -= c_write;
+    }
+    while (count);
+}
+
+inline void write80_c2(uint8_t*& w, int count, int p)
+{
+    //command 3
+    *w++ = 0xc0 | (count - 3);
+    writeLE16(p, w);
+}
+
+inline void write80_c3(uint8_t*& w, int count, int v)
+{
+    //command 4
+    *w++ = 0xfe;
+    writeLE16(count, w);
+    *w++ = v;
+}
+
+inline void write80_c4(uint8_t*& w, int count, int p)
+{
+    //command 5
+    *w++ = 0xff;
+    writeLE16(count, w);
+    writeLE16(p, w);
+}
+
+inline void flush_c1(uint8_t*& w, const uint8_t* r, const uint8_t*& copy_from)
+{
+    //writes command 1 when we have a long run of unique pixels
+    if (copy_from)
+    {
+        write80_c1(w, r - copy_from, copy_from);
+        copy_from = NULL;
+    }
+}
+
+inline void write40_c0(uint8_t*& w, int count, int v)
+{
+    *w++ = 0;
+    *w++ = count;
+    *w++ = v;
+}
+
+inline void write40_c1(uint8_t*& w, int count, const uint8_t* r)
+{
+    *w++ = count;
+    memcpy(w, r, count);
+    w += count;
+}
+
+inline void write40_c2(uint8_t*& w, int count)
+{
+    *w++ = 0x80;
+    writeLE16(count, w);
+}
+
+inline void write40_c3(uint8_t*& w, int count, const uint8_t* r)
+{
+    *w++ = 0x80;
+    writeLE16(0x8000 | count, w);
+    memcpy(w, r, count);
+    w += count;
+}
+
+inline void write40_c4(uint8_t*& w, int count, int v)
+{
+    *w++ = 0x80;
+    writeLE16(0xc000 | count, w);
+    *w++ = v;
+}
+
+inline void write40_c5(uint8_t*& w, int count)
+{
+    *w++ = 0x80 | count;
+}
+
+void write40_copy(uint8_t*& w, int count, const uint8_t* r)
+{
+    while (count)
+    {
+        if (count < 0x80)
+        {
+            write40_c1(w, count, r);
+            count = 0;
+        }
+        else
+        {
+            int c_write = count < 0x4000 ? count : 0x3fff;
+            write40_c3(w, c_write, r);
+            r += c_write;
+            count  -= c_write;
+        }
+    }
+}
+
+void write40_fill(uint8_t*& w, int count, int v)
+{
+    while (count)
+    {
+        if (count < 0x100)
+        {
+            write40_c0(w, count, v);
+            count = 0;
+        }
+        else
+        {
+            int c_write = count < 0x4000 ? count : 0x3fff;
+            write40_c4(w, c_write, v);
+            count  -= c_write;
+        }
+    }
+}
+
+void write40_skip(uint8_t*& w, int count)
+{
+    while (count)
+    {
+        if (count < 0x80)
+        {
+            write40_c5(w, count);
+            count = 0;
+        }
+        else
+        {
+            int c_write = count < 0x8000 ? count : 0x7fff;
+            write40_c2(w, c_write);
+            count  -= c_write;
+        }
+    }
+}
+
+static void flush_copy(uint8_t*& w, const uint8_t* r, const uint8_t*& copy_from)
+{
+    if (copy_from)
+    {
+        write40_copy(w, r - copy_from, copy_from);
+        copy_from = NULL;
+    }
+}
+
+}//anon namespace
+
 int encodeLCW(const uint8_t* src, uint8_t* dest, int datasize)
 {
-    
+    // full compression
+    const uint8_t* s_end = src + datasize;
+    const uint8_t* readp = src;
+    uint8_t* writep = dest;
+    const uint8_t* copy_from = NULL;
+    //*writep++ = -127;
+    //*writep++ = *readp++;    
+    while (readp < s_end)
+    {
+        const uint8_t* pos;
+        int blocksize = get_same(src, readp, s_end, pos);
+        int runlen = get_run_length(readp, s_end);
+        if (runlen < blocksize && blocksize > 2)
+        {
+            flush_c1(writep, readp, copy_from);
+            if (blocksize - 3 < 8 && readp - pos < 0x1000)
+                write80_c0(writep, blocksize, readp - pos);
+            else if (blocksize - 3 < 0x3e)
+                write80_c2(writep, blocksize, pos - src);
+            else 
+                write80_c4(writep, blocksize, pos - src);				
+            readp += blocksize;
+        }
+        else
+        {
+            if (runlen < 3)
+            {
+                if (!copy_from)
+                    copy_from = readp;
+            }
+            else
+            {
+                flush_c1(writep, readp, copy_from);
+                write80_c3(writep, runlen, *readp);
+            }
+            readp += runlen;
+        }
+    }
+    flush_c1(writep, readp, copy_from);
+    write80_c1(writep, 0, NULL);
+    return writep - dest;
+}
+
+int createXorDelta(const uint8_t* reference, 
+                   const uint8_t* result, uint8_t* dest, int datasize)
+{
+	// full compression
+	uint8_t* s = new uint8_t[datasize];
+	{
+		uint8_t* a = s;
+		int size = datasize;
+		while (size--)
+			*a++ = *reference++ ^ *result++;
+	}
+	const uint8_t* s_end = s + datasize;
+	const uint8_t* r = s;
+	uint8_t* w = dest;
+	const uint8_t* copy_from = NULL;
+	while (r < s_end)
+	{
+		int v = *r;
+		int t = get_run_length(r, s_end);
+		if (!v)
+		{
+			flush_copy(w, r, copy_from);			
+			write40_skip(w, t);
+		}
+		else if (t > 2)
+		{
+			flush_copy(w, r, copy_from);			
+			write40_fill(w, t, v);
+		}
+		else
+		{
+			if (!copy_from)
+				copy_from = r;
+		}
+		r += t;
+	}
+	flush_copy(w, r, copy_from);
+	write40_c2(w, 0);
+	delete[] s;
+	return w - dest;
 }
     
 } } //eastwood codec

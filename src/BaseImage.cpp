@@ -20,7 +20,7 @@ void BaseImage::render(Surface& surface, int xpos, int ypos)
     if(xpos > surface.width() || ypos > surface.height()) return;
     
     uint8_t* surf = surface;
-    uint8_t* img = &_bitmap.at(0);
+    uint8_t* img = *_pixels.get();
     uint32_t start = xpos + surface.pitch() * ypos;
     uint32_t size = xpos + _width > surface.width() ? 
                                             xpos + _width - surface.width() :
@@ -34,13 +34,6 @@ void BaseImage::render(Surface& surface, int xpos, int ypos)
         surf += surface.pitch();
         img += _width;
     }
-}
-
-void BaseImage::setDimensions(unsigned int width, unsigned int height)
-{
-    _width = width;
-    _height = height;
-    _bitmap.resize(_width * _height);
 }
 
 } //eastwood

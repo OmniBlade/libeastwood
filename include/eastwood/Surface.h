@@ -6,6 +6,7 @@
 
 #include "eastwood/Buffer.h"
 #include "eastwood/Palette.h"
+#include "eastwood/BaseImage.h"
 
 namespace eastwood {
 
