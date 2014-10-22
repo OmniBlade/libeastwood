@@ -32,16 +32,16 @@ int main(int argc, char** argv)
         printf("String 5: %s\n", str.getString(5).c_str());
     }
     infile.close();
-    infile.open("palette.cps", std::ios_base::in | std::ios_base::binary);
-    CpsFile pal(infile);
+    infile.open("alibackh.pcx", std::ios_base::in | std::ios_base::binary);
+    PcxFile pal(infile);
     infile.close();
     Surface surf = pal.getSurface();
     OStream outfile;
-    outfile.open("testing.cps", std::ios_base::out | std::ios_base::binary);
+    outfile.open("testing.pcx", std::ios_base::out | std::ios_base::binary);
     if(outfile.is_open()){
             LOG_INFO("Out stream is open");
             //surf.saveBMP(outfile);
-            pal.writeCps(outfile);
+            pal.writePcx(outfile);
         }
     outfile.close();
     //outfile.open("testing.cps", std::ios_base::out | std::ios_base::binary);

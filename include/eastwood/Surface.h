@@ -6,7 +6,6 @@
 
 #include "eastwood/Buffer.h"
 #include "eastwood/Palette.h"
-#include "eastwood/BaseImage.h"
 
 namespace eastwood {
 
@@ -30,6 +29,7 @@ class Surface {
 	virtual operator uint8_t*() const {
 	    return *_pixels.get();
 	}
+        
 	virtual operator void*() const {
             return *_pixels.get();
         }

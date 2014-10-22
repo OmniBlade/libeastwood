@@ -12,7 +12,7 @@ const int OFFSET = 128;         //size of pcx header
 const uint16_t DPI = 300;
 
 PcxFile::PcxFile(std::istream &stream):
-    BaseImage(), _header(), _palette(0)
+    BaseImage(0, 0), _header(), _palette(0)
 {
     IStream& _stream= reinterpret_cast<IStream&>(stream);
     
@@ -53,7 +53,7 @@ PcxFile::PcxFile(std::istream &stream):
     _height = (_header.ymax - _header.ymin) + 1;
     _width = _header.bpl;
     //resize out bitmap to match expected
-    _pixels.resize(_width * _height);
+    _pixels = BytesPtr(new Bytes(new uint8_t[(_width * _height)]));
     _header.paltype = _stream.getU16LE();
     
     //fetch pal from end of file
@@ -63,13 +63,13 @@ PcxFile::PcxFile(std::istream &stream):
     
     //decode image from end of header
     _stream.seekg(OFFSET, std::ios_base::beg);
-    codec::decodeRLE(_stream, &_pixels.at(0));
+    codec::decodeRLE(_stream, static_cast<uint8_t*>(*this));
 }
 
 void PcxFile::writePcx(std::ostream& stream)
 {
     writeHeader(stream);
-    codec::encodeRLE(&_pixels.at(0), stream, _width, _height);
+    codec::encodeRLE(static_cast<uint8_t*>(*this), stream, _width, _height);
     _palette.savePAL(stream, true);
 }
 
@@ -98,7 +98,7 @@ void PcxFile::writeHeader(std::ostream& stream)
 
 Surface PcxFile::getSurface() {
     Surface surf(_width, _height, 8, _palette);
-    memcpy(surf, &_pixels.at(0), _pixels.size());
+    memcpy(surf, *_pixels.get(), _height * _width);
     
     return surf;
 }
