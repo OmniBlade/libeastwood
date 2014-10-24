@@ -84,7 +84,7 @@ ENDIF(NOT WIN32)
 # just to verify that the code still builds, but we don't actually install it
 # anymore...
 IF(LIBEASTWOOD_BUILD_SDL)
-  ADD_LIBRARY( SDL_eastwood SHARED ${SDL_LIBEASTWOOD_SRCS} )
+  ADD_LIBRARY( SDL_eastwood STATIC ${SDL_LIBEASTWOOD_SRCS} )
   TARGET_LINK_LIBRARIES( SDL_eastwood eastwood )
   TARGET_LINK_LIBRARIES( eastwood ${SDL_LIBRARY} )
   TARGET_LINK_LIBRARIES( eastwood ${SDLMIXER_LIBRARY} )

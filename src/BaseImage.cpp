@@ -1,5 +1,4 @@
 #include "eastwood/BaseImage.h"
-#include "eastwood/Palette.h"
 
 namespace eastwood {
 
@@ -12,6 +11,33 @@ Surface BaseImage::getSurface()
     return surf;
 }
 #endif
+
+BaseImage::BaseImage(const BaseImage& image) :
+    _width(image._width),
+    _height(image._height),
+    _pixels(new Bytes(new uint8_t[(_width * _height)])),
+    _palette(image._palette)
+{
+    uint8_t* src = *image._pixels.get();
+    uint8_t* dest = *_pixels.get();
+    int count = _width * _height;
+    for(int i = 0; i < count; i++) {
+        dest[i] = src[i];
+    }
+}
+
+BaseImage& BaseImage::operator =(const BaseImage& image)
+{
+    _width = image._width;
+    _height = image._height;
+    _palette = image._palette;
+    uint8_t* src = *image._pixels.get();
+    uint8_t* dest = *_pixels.get();
+    int count = _width * _height;
+    for(int i = 0; i < count; i++) {
+        dest[i] = src[i];
+    }
+}
 
 //simple straight blit to surface
 void BaseImage::render(Surface& surface, int xpos, int ypos)

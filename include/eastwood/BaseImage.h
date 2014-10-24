@@ -17,12 +17,14 @@ public:
         _height(height), 
         _pixels(new Bytes(new uint8_t[(_width * _height)])), 
         _palette(0) {}
+    BaseImage(const BaseImage& image);
     virtual ~BaseImage() {}
     
     //virtual Surface getSurface();
     virtual void render(Surface& surface, int xpos, int ypos);
     virtual operator uint8_t*() { return *_pixels.get(); }
     virtual operator void*() { return *_pixels.get(); }
+    virtual BaseImage& operator=(const BaseImage& image);
     
     void setPalette(Palette pal) { _palette = pal; }
 protected:
