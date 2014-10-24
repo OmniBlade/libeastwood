@@ -1,6 +1,6 @@
 #include "eastwood/IStream.h"
 #include "eastwood/StdDef.h"
-#include "eastwood/Surface.h"
+#include "eastwood/SDL/Surface.h"
 #include "eastwood/CpsFile.h"
 #include "eastwood/Log.h"
 #include "SDL/SDL.h"
@@ -8,6 +8,8 @@
 //Screen dimension constants CPS always these dimensions
 const int SCREEN_WIDTH = 320;
 const int SCREEN_HEIGHT = 200;
+
+SDL_Event event;
 
 using namespace eastwood;
 
@@ -20,15 +22,28 @@ int main(int argc, char** argv)
     }
     
     SDL_Surface* window = NULL;
-    SDL_Surface* screenSurface = NULL;
     
-    if(SDL_Init(SDL_INIT_EVERYTHING) < 0) {
-        LOG_ERROR("SDL could not initialize! SDL_Error %s\n", SDL_GetError());
-    } else {
-        window = SDL_CreateWindow("CPS Viewer", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
-        if(window == NULL){
-            LOG_ERROR("Window could not be created! SDL_Error: %s\n", SDL_GetError());
-        }  
+    SDL_Init( SDL_INIT_EVERYTHING );
+    window = SDL_SetVideoMode( 320, 200, 32, SDL_SWSURFACE );
+    
+    SDL_WM_SetCaption( "CPS Viewer", NULL );
+    
+    CpsFile cps(infile);
+    SDL::Surface surface(cps.getSurface());
+    
+    SDL_BlitSurface( surface, NULL, window, NULL );
+    
+    SDL_Flip(window);
+    
+    bool quit = false;
+    while(!quit) {
+        while(SDL_PollEvent(&event)) {
+            //If the user has Xed out the window 
+            if( event.type == SDL_QUIT ) { 
+                //Quit the program 
+                quit = true; 
+            } 
+        }
     }
     
 }

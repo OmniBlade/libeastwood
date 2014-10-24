@@ -26,6 +26,10 @@ public:
     virtual operator void*() { return *_pixels.get(); }
     virtual BaseImage& operator=(const BaseImage& image);
     
+    unsigned int width() { return _width; }
+    unsigned int height() { return _height; }
+    Palette palette() { return _palette; }
+    
     void setPalette(Palette pal) { _palette = pal; }
 protected:
     unsigned int _width;
