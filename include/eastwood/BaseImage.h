@@ -5,6 +5,7 @@
 #include "eastwood/Surface.h"
 #include "eastwood/StdDef.h"
 #include "eastwood/Buffer.h"
+#include "eastwood/Log.h"
 #include <vector>
 
 namespace eastwood {
@@ -16,7 +17,7 @@ public:
         _width(width), 
         _height(height), 
         _pixels(new Bytes(new uint8_t[(_width * _height)])), 
-        _palette(0) {}
+        _palette(0) { LOG_DEBUG("Base image created size %d", _width * _height); }
     BaseImage(const BaseImage& image);
     virtual ~BaseImage() {}
     
@@ -28,6 +29,7 @@ public:
     
     unsigned int width() { return _width; }
     unsigned int height() { return _height; }
+    unsigned int size() { return _height * _width; }
     Palette palette() { return _palette; }
     
     void setPalette(Palette pal) { _palette = pal; }
