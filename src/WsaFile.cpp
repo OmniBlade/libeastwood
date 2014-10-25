@@ -136,6 +136,17 @@ void WsaFile::decodeFrames(std::istream& stream)
         codec::applyXorDelta(&dec80buf.front(), _decodedFrames.back());
         LOG_DEBUG("Frame delta applied");
     }
+    /*
+    std::vector<uint8_t> dec80(_decodedFrames.front().size());
+    Surface *pic = NULL;
+
+    for(std::vector<Surface>::iterator it = _decodedFrames.begin();
+	    it != _decodedFrames.end(); pic = &(*it), ++it) {
+	if(pic)
+	    *it = Surface(*pic);
+	decode80(&dec80.front(), 0);
+	decode40(&dec80.front(), *it);
+    */
 }
 
 Surface WsaFile::getSurface(uint16_t frameNumber)
