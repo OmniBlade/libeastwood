@@ -12,7 +12,7 @@ const int OFFSET = 128;         //size of pcx header
 const uint16_t DPI = 300;
 
 PcxFile::PcxFile(std::istream &stream):
-    BaseImage(0, 0), _header(), _palette(0)
+    BaseImage(0, 0, Palette(0)), _header()
 {
     IStream& _stream= reinterpret_cast<IStream&>(stream);
     
@@ -96,11 +96,13 @@ void PcxFile::writeHeader(std::ostream& stream)
     _stream.seekp(58, std::ios_base::cur);
 }
 
+#if 0
 Surface PcxFile::getSurface() {
     Surface surf(_width, _height, 8, _palette);
     memcpy(surf, *_pixels.get(), _height * _width);
     
     return surf;
 }
+#endif
 
 } //eastwood

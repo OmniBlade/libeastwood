@@ -21,7 +21,8 @@ public:
     BaseImage(const BaseImage& image);
     virtual ~BaseImage() {}
     
-    //virtual Surface getSurface();
+    Surface getSurface();
+    Surface getSurface(Palette pal);
     virtual void render(Surface& surface, int xpos, int ypos);
     virtual operator uint8_t*() { return *_pixels.get(); }
     virtual operator void*() { return *_pixels.get(); }
@@ -30,7 +31,7 @@ public:
     unsigned int width() { return _width; }
     unsigned int height() { return _height; }
     unsigned int size() { return _height * _width; }
-    Palette palette() { return _palette; }
+    Palette getpalette() { return _palette; }
     
     void setPalette(Palette pal) { _palette = pal; }
 protected:

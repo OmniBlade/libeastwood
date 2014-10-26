@@ -2,16 +2,6 @@
 
 namespace eastwood {
 
-#if 0
-Surface BaseImage::getSurface()
-{
-    Surface surf(_width, _height, 8, Palette(0));
-    memcpy(surf, &_bitmap.at(0), _bitmap.size());
-    
-    return surf;
-}
-#endif
-
 BaseImage::BaseImage(const BaseImage& image) :
     _width(image._width),
     _height(image._height),
@@ -39,6 +29,26 @@ BaseImage& BaseImage::operator =(const BaseImage& image)
     }
     
     return *this;
+}
+
+Surface BaseImage::getSurface()
+{
+    LOG_DEBUG("Getting surface from %d x %d image", _width, _height);
+    
+    Surface surf(_width, _height, 8, _palette);
+    memcpy(surf, *_pixels.get(), _height * _width);
+    
+    return surf;
+}
+
+Surface BaseImage::getSurface(Palette pal)
+{
+    LOG_DEBUG("Getting set pal surface from %d x %d image", _width, _height);
+    
+    Surface surf(_width, _height, 8, pal);
+    memcpy(surf, *_pixels.get(), _height * _width);
+    
+    return surf;
 }
 
 //simple straight blit to surface

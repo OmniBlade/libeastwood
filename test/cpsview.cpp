@@ -19,6 +19,7 @@ int main(int argc, char** argv)
     infile.open(argv[1]);
     if(!infile.is_open()) {
         LOG_ERROR("Could not open file.");
+        return -1;
     }
     
     SDL_Surface* window = NULL;

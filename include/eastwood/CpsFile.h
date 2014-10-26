@@ -19,14 +19,10 @@ class CpsFile : public BaseImage
     public:
 	CpsFile(std::istream &stream, Palette palette = Palette(0));
 
-        Palette getPalette() { return _palette; }
-        void setPalette(Palette pal) { _palette = pal; }
         void writeCps(std::ostream& stream);
-        Surface getSurface();
+        //Surface getSurface();
     private:
 	compressionFormat _format;
-        Palette _palette;
-
 };
 
 }

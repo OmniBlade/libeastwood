@@ -34,7 +34,6 @@ int decodeLCW(const uint8_t* source, uint8_t* dest)
 
         /* Exit */
         if (flag == 0x80) {
-            LOG_DEBUG("End of lcw data reached");
             break;
         }
 
@@ -128,7 +127,6 @@ int decodeLCW(std::istream& stream, uint8_t* dest)
 
         /* Exit */
         if (flag == 0x80) {
-            LOG_DEBUG("End of lcw data reached");
             break;
         }
 
@@ -229,7 +227,6 @@ void applyXorDelta(const uint8_t* source , uint8_t* dest)
         flag += (*source++) << 8;
 
         if (flag == 0) {
-            LOG_DEBUG("End of delta data reached");
             break;
         }
         if ((flag & 0x8000) == 0) {

@@ -40,14 +40,11 @@ private:
 public:
     PcxFile(std::istream &stream);
 
-    Palette getPalette() { return _palette; }
-    void setPalette(Palette pal) { _palette = pal; }
     void writePcx(std::ostream& stream);
-    Surface getSurface();
+    //Surface getSurface();
 private:
     void writeHeader(std::ostream& stream);
     PcxHeader _header;
-    Palette _palette;
 };
 
 }
