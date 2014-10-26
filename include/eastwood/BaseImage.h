@@ -34,8 +34,8 @@ public:
     
     void setPalette(Palette pal) { _palette = pal; }
 protected:
-    unsigned int _width;
-    unsigned int _height;
+    uint32_t _width;
+    uint32_t _height;
     BytesPtr _pixels;
     Palette _palette;
 };

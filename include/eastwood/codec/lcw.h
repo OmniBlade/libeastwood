@@ -7,7 +7,8 @@
 
 namespace eastwood { namespace codec {
 
-    int decodeLCW(const uint8_t* source, uint8_t* dest, int destsize);
+    int decodeLCW(const uint8_t* source, uint8_t* dest);
+    int decodeLCW(std::istream& stream, uint8_t* dest);
     void applyXorDelta(const uint8_t* source , uint8_t* dest);
     int encodeLCW(const uint8_t* src, uint8_t* dest, int datasize);
     int encodeLCW(const uint8_t* src, std::ostream& dest, int datasize);

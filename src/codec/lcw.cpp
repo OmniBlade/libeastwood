@@ -1,18 +1,19 @@
 #include "eastwood/codec/lcw.h"
 #include "eastwood/Log.h"
 #include "eastwood/OStream.h"
+#include "eastwood/IStream.h"
 
 #include <algorithm>
 #include <vector>
 
 namespace eastwood { namespace codec {
     
-int decodeLCW(const uint8_t* source, uint8_t* dest, int destsize)
+int decodeLCW(const uint8_t* source, uint8_t* dest)
 {
     uint8_t *start = dest;
-    uint8_t *end = dest + destsize;
+    //uint8_t *end = dest + destsize;
 
-    while (dest != end) {
+    while (true) {
         uint8_t flag;
         uint16_t size;
         uint16_t offset;
@@ -22,7 +23,7 @@ int decodeLCW(const uint8_t* source, uint8_t* dest, int destsize)
         /* Short move, relative */
         if ((flag & 0x80) == 0) {
             size = (flag >> 4) + 3;
-            if (size > end - dest) size = end - dest;
+            //if (size > end - dest) size = end - dest;
 
             offset = ((flag & 0xF) << 8) + (*source++);
 
@@ -41,7 +42,7 @@ int decodeLCW(const uint8_t* source, uint8_t* dest, int destsize)
         if (flag == 0xFE) {
             size = *source++;
             size += (*source++) << 8;
-            if (size > end - dest) size = end - dest;
+            //if (size > end - dest) size = end - dest;
 
             memset(dest, (*source++), size);
             dest += size;
@@ -54,12 +55,14 @@ int decodeLCW(const uint8_t* source, uint8_t* dest, int destsize)
 
             size = *source++;
             size += (*source++) << 8;
-            if (size > end - dest) size = end - dest;
+            //if (size > end - dest) size = end - dest;
 
             offset = *source++;
             offset += (*source++) << 8;
 
-            s = end - destsize + offset;
+            //this is absolute from start of file in CnC
+            //s = end - destsize + offset;
+            s = start + offset;
             /* This decoder assumes memcpy. As some platforms implement memcpy as memmove, this is much safer */
             for (; size > 0; size--) *dest++ = *s++;
             continue;
@@ -70,12 +73,14 @@ int decodeLCW(const uint8_t* source, uint8_t* dest, int destsize)
             uint8_t *s;
 
             size = (flag & 0x3F) + 3;
-            if (size > end - dest) size = end - dest;
+            //if (size > end - dest) size = end - dest;
 
             offset = *source++;
             offset += (*source++) << 8;
 
-            s = end - destsize + offset;
+            //this is absolute from start of file in CnC
+            //s = end - destsize + offset;
+            s = start + offset;
             /* This decoder assumes memcpy. As some platforms implement memcpy as memmove, this is much safer */
             for (; size > 0; size--) *dest++ = *s++;
             continue;
@@ -84,14 +89,110 @@ int decodeLCW(const uint8_t* source, uint8_t* dest, int destsize)
         /* Short copy */
         {
             size = flag & 0x3F;
-            if (size > end - dest) size = end - dest;
+            //if (size > end - dest) size = end - dest;
 
             /* This decoder assumes memcpy. As some platforms implement memcpy as memmove, this is much safer */
             for (; size > 0; size--) *dest++ = *source++;
             continue;
         }
     }
+    
+    return dest - start;
+}
 
+int decodeLCW(std::istream& stream, uint8_t* dest)
+{
+    IStream& _stream= reinterpret_cast<IStream&>(stream);
+    uint8_t *start = dest;
+    //uint8_t *end = dest + destsize;
+
+    while (true) {
+        uint8_t flag;
+        uint16_t size;
+        uint16_t offset;
+
+        flag = _stream.get();
+
+        /* Short move, relative */
+        /* 0cccpppp p (1) */
+        if ((flag & 0x80) == 0) {
+            size = (flag >> 4) + 3;
+            //if (size > end - dest) size = end - dest;
+
+            offset = ((flag & 0xF) << 8) + (_stream.get());
+
+            /* This decoder assumes memcpy. As some platforms implement memcpy as memmove, this is much safer */
+            for (; size > 0; size--) { *dest = *(dest - offset); dest++; }
+            continue;
+        }
+
+        /* Exit */
+        if (flag == 0x80) {
+            LOG_DEBUG("End of lcw data reached");
+            break;
+        }
+
+        /* Long set */
+        /* 11111110 c c v(4) */
+        if (flag == 0xFE) {
+            size = _stream.get();
+            size += (_stream.get()) << 8;
+            //if (size > end - dest) size = end - dest;
+
+            memset(dest, (_stream.get()), size);
+            dest += size;
+            continue;
+        }
+
+        /* Long move, absolute */
+        /* 11111111 c c p p (5) */
+        if (flag == 0xFF) {
+            uint8_t *s;
+
+            size = _stream.get();
+            size += (_stream.get()) << 8;
+            //if (size > end - dest) size = end - dest;
+
+            offset = _stream.get();
+            offset += (_stream.get()) << 8;
+            
+            //this is absolute from start of file in CnC
+            //s = end - destsize + offset;
+            s = start + offset;
+            /* This decoder assumes memcpy. As some platforms implement memcpy as memmove, this is much safer */
+            for (; size > 0; size--) *dest++ = *s++;
+            continue;
+        }
+
+        /* Short move, absolute */
+        if ((flag & 0x40) != 0) {
+            uint8_t *s;
+
+            size = (flag & 0x3F) + 3;
+            //if (size > end - dest) size = end - dest;
+
+            offset = _stream.get();
+            offset += (_stream.get()) << 8;
+
+            //this is absolute from start of file in CnC
+            //s = end - destsize + offset;
+            s = start + offset;
+            /* This decoder assumes memcpy. As some platforms implement memcpy as memmove, this is much safer */
+            for (; size > 0; size--) *dest++ = *s++;
+            continue;
+        }
+
+        /* Short copy */
+        {
+            size = flag & 0x3F;
+            //if (size > end - dest) size = end - dest;
+
+            /* This decoder assumes memcpy. As some platforms implement memcpy as memmove, this is much safer */
+            for (; size > 0; size--) *dest++ = _stream.get();
+            continue;
+        }
+    }
+    
     return dest - start;
 }
 
@@ -127,8 +228,10 @@ void applyXorDelta(const uint8_t* source , uint8_t* dest)
         flag = *source++;
         flag += (*source++) << 8;
 
-        if (flag == 0) break;
-
+        if (flag == 0) {
+            LOG_DEBUG("End of delta data reached");
+            break;
+        }
         if ((flag & 0x8000) == 0) {
             dest += flag;
             continue;

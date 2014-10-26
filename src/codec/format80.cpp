@@ -75,8 +75,10 @@ int decode80(const uint8_t* src, uint8_t* dest)
 	    count = command & 0x3f;
 	    if((command & 0x40) == 0) {
 		// Finished decoding
-		if (!count)
+		if (!count){
+                    LOG_DEBUG("End of format80 data reached");
 		    break;
+                }
 		while (count--)
                         *writep++ = *readp++;
 	    } else {

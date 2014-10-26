@@ -35,7 +35,7 @@ int main(int argc, char** argv)
     infile.open("sov-tran.wsa", std::ios_base::in | std::ios_base::binary);
     WsaFile pal(infile);
     infile.close();
-    Surface surf = pal.getSurface(5);
+    Surface surf = pal.getSurface(10);
     OStream outfile;
     outfile.open("testing.bmp", std::ios_base::out | std::ios_base::binary);
     if(outfile.is_open()){

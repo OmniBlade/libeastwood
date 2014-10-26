@@ -60,10 +60,7 @@ CpsFile::CpsFile(std::istream &stream, Palette palette) :
 	    throw(Exception(LOG_ERROR, "CpsFile", "LBM format not yet supported"));
 	    break;
 	case FORMAT_80:
-            while(!_stream.eof()){
-                buffer.push_back(_stream.get());
-            }
-            checksum = codec::decodeLCW(&buffer.at(0), *_pixels.get(), _height * _width);
+            checksum = codec::decodeLCW(_stream, *_pixels.get());
             if(checksum != _height * _width) {
                 LOG_ERROR("Decode80 return %d did not match expected size %d", checksum, _height * _width);
                 throw(Exception(LOG_ERROR, "CpsFile", "Cannot decode Cps-File"));

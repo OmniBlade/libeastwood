@@ -140,7 +140,7 @@ int decode40(const uint8_t *src, uint8_t *dest)
 	} else {
 	    //bit 7 = 1
 	    if (!(count = code & 0x7f)) {
-		count =  htole16(*(reinterpret_cast<const uint16_t*>(readp)));
+		count = htole16(*(reinterpret_cast<const uint16_t*>(readp)));
 		readp += 2;
 		code = count >> 8;
 		if (~code & 0x80) {
@@ -148,6 +148,7 @@ int decode40(const uint8_t *src, uint8_t *dest)
 		    //command 2 (10000000 c 0ccccccc): skip
 		    if (!count)
 			// end of image
+                        LOG_DEBUG("Format40 end of image flag");
 			break;
 		    writep += count;
 		} else {
