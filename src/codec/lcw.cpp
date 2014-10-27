@@ -251,6 +251,27 @@ void applyXorDelta(const uint8_t* source , uint8_t* dest)
     }
 }
 
+void fillZeros(const std::vector<uint8_t> &in, uint8_t *dest)
+{
+    for(std::vector<uint8_t>::const_iterator it = in.begin(); it != in.end();) {
+	uint8_t val = *it++;
+
+	if (val != 0) {
+	    *dest = val;
+	    dest++;
+	} else {
+	    uint8_t count;
+	    count = *it++;
+	    if (count == 0) {
+		return;
+	    }
+	    memset(dest, 0, count);
+
+	    dest += count;
+	}
+    }
+}
+
 #if 0
 //hexrays dump of encoding function from TS
 int LCW_Comp(char* srcp, char* destp, int datasize)

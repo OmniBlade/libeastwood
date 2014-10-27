@@ -15,6 +15,7 @@ SET( LIBEASTWOOD_SRCS
   CpsFile.cpp
   Decode.cpp
   Dune2File.cpp
+  DuneShpFile.cpp
   EmcFileAssemble.cpp
   EmcFileBase.cpp
   EmcFileDisassemble.cpp
@@ -29,7 +30,6 @@ SET( LIBEASTWOOD_SRCS
   Palette.cpp
   PalFile.cpp
   PcxFile.cpp
-  ShpFile.cpp
   Sound.cpp
   StringFile.cpp
   Surface.cpp

@@ -11,7 +11,7 @@
 #include "eastwood/PcxFile.h"
 #include "eastwood/WsaFile.h"
 #include "eastwood/PalFile.h"
-#include "eastwood/ShpFile.h"
+#include "eastwood/DuneShpFile.h"
 
 const char* mixes[] = {"tdtest.mix", "ratest.mix", "rasub.mix"};
 const char* strfiles[] = {"sole.eng", "conquer.eng", "setup.dip", "redalert.eng"};
@@ -51,7 +51,7 @@ int main(int argc, char** argv)
     infile.open("mouse.shp", std::ios_base::in | std::ios_base::binary);
     if(infile.is_open()){
         LOG_INFO("Opening shp file");
-        ShpFile fileformat(infile, pal.getPalette(), SHP_DUNE2);
+        DuneShpFile fileformat(infile, pal.getPalette(), SHP_DUNE2);
         LOG_INFO("Shp has %d fames", fileformat.size());
         OStream outfile;
         outfile.open("testing.bmp", std::ios_base::out | std::ios_base::binary);

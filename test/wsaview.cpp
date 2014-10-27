@@ -57,7 +57,6 @@ int main(int argc, char** argv)
                 quit = true; 
             }
         }
-        LOG_DEBUG("Trying to render frame %d", frame);
         surface = wsa[frame].getSurface(wsa.palette());
         SDL_BlitSurface( surface, NULL, window, NULL );
         SDL_Flip(window);

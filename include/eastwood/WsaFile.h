@@ -20,8 +20,8 @@ private:
 	void decodeFrames(std::istream& stream);
 	std::vector<uint32_t> _frameOffsTable;
         
-        unsigned int _width;
-        unsigned int _height;
+    unsigned int _width;
+    unsigned int _height;
 	uint32_t _deltaBufferSize,
 		 _framesPer1024ms;
                  
