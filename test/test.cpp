@@ -8,10 +8,8 @@
 #include "eastwood/FntFile.h"
 #include "eastwood/StringFile.h"
 #include "eastwood/OStream.h"
-#include "eastwood/PcxFile.h"
-#include "eastwood/WsaFile.h"
 #include "eastwood/PalFile.h"
-#include "eastwood/DuneShpFile.h"
+#include "eastwood/CnCShpFile.h"
 
 const char* mixes[] = {"tdtest.mix", "ratest.mix", "rasub.mix"};
 const char* strfiles[] = {"sole.eng", "conquer.eng", "setup.dip", "redalert.eng"};
@@ -32,10 +30,14 @@ int main(int argc, char** argv)
         printf("String 5: %s\n", str.getString(5).c_str());
     }
     infile.close();
-    infile.open("sov-tran.wsa", std::ios_base::in | std::ios_base::binary);
-    WsaFile pal(infile);
+    infile.open("palette.cps", std::ios_base::in | std::ios_base::binary);
+    CpsFile cps(infile);
     infile.close();
-    Surface surf = pal[10].getSurface(pal.palette());
+    Palette palette = cps.getPalette();
+    infile.open("einstein.shp", std::ios_base::in | std::ios_base::binary);
+    CnCShpFile shp(infile);
+    LOG_DEBUG("Getting shp frame");
+    Surface surf = shp[164].getSurface(palette);
     OStream outfile;
     outfile.open("testing.bmp", std::ios_base::out | std::ios_base::binary);
     if(outfile.is_open()){
@@ -66,11 +68,6 @@ int main(int argc, char** argv)
     }
     infile.close();
     #endif
-    
-    
-    //file.open(finfo);
-    //StringFile strf(file2);
-    //strf.list();
     
     return 0;
 }

@@ -5,6 +5,8 @@
 
 #include "eastwood/Exception.h"
 #include "eastwood/DuneShpFile.h"
+#include "eastwood/IStream.h"
+#include "eastwood/codec/lcw.h"
 
 namespace eastwood {
 
@@ -56,6 +58,10 @@ DuneShpFile::DuneShpFile(std::istream &stream) :
 		throw(Exception(LOG_ERROR, "ShpFile", "The File with Index %d, goes until byte %d, but this SHP-File is only %d bytes big.",
 			i, _index.at(i).endOffset, fileSize));
 	}
+    }
+    
+    for(uint32_t i = 0; i < frames; i++){
+        decodeFrame(_stream, i);
     }
 }
 
@@ -145,7 +151,7 @@ Surface DuneShpFile::getSurfaceArray(const uint8_t tilesX, const uint8_t tilesY,
 }
 #endif
 
-void DuneShpFile::decodeFrame(std::istream &stream, uint16_t fileIndex, uint8_t* imageOut)
+void DuneShpFile::decodeFrame(std::istream &stream, uint16_t fileIndex)
 {
     IStream& _stream= reinterpret_cast<IStream&>(stream);
     uint8_t slices;
@@ -165,12 +171,12 @@ void DuneShpFile::decodeFrame(std::istream &stream, uint16_t fileIndex, uint8_t*
     slices = _stream.get();
     width = _stream.getU16LE();
     height = _stream.get();
+    
+    _frames.push_back(BaseImage(width, height));
 
     fileSize = _stream.getU16LE();
     /* size and also checksum */
     imageSize = _stream.getU16LE();
-
-    imageOut = new uint8_t[imageOutSize = width*height];
 
     LOG_INFO("ShpFile", "File Nr.: %d (Size: %dx%d)",fileIndex,width,height);
 
@@ -178,10 +184,8 @@ void DuneShpFile::decodeFrame(std::istream &stream, uint16_t fileIndex, uint8_t*
 	case 0:
 	    decodeDestination.resize(imageSize);
 	    
-	    if(codec::decodeLCW(&decodeDestination.front(), imageSize) == -1)
-		LOG_WARNING("ShpFile","Checksum-Error in Shp-File");
-
-	    codec::fillZeros(decodeDestination, imageOut);
+	    codec::decodeLCW(_stream, &decodeDestination.front());
+            codec::fillZeros(decodeDestination, _frames.at(fileIndex));
 	    break;
 
 	case 1:
@@ -190,13 +194,12 @@ void DuneShpFile::decodeFrame(std::istream &stream, uint16_t fileIndex, uint8_t*
 
 	    _stream.read(reinterpret_cast<char*>(&palOffsets.front()), palOffsets.size());
 
-	    if(codec::decodeLCW(&decodeDestination.front(), imageSize) == -1)
-		LOG_WARNING("ShpFile", "Checksum-Error in Shp-File");
-	    
-	    codec::fillZeros(decodeDestination, imageOut);
+	    codec::decodeLCW(_stream, &decodeDestination.front());
+            codec::fillZeros(decodeDestination, _frames.at(fileIndex));
 
-	    apply_pal_offsets(palOffsets, imageOut, imageOutSize);
-	    break;
+	    apply_pal_offsets(palOffsets, _frames.at(fileIndex), 
+                              _frames.at(fileIndex).size());
+            break;
 
 	case 2:
 #if 0	//FIXME
@@ -204,7 +207,7 @@ void DuneShpFile::decodeFrame(std::istream &stream, uint16_t fileIndex, uint8_t*
 #else	    
 	    decodeDestination.resize(imageSize);	    
 	    _stream.read(reinterpret_cast<char*>(&decodeDestination.front()), imageSize);
-	    codec::fillZeros(decodeDestination, imageOut);
+	    codec::fillZeros(decodeDestination, _frames.at(fileIndex));
 #endif
 	    break;
 
@@ -217,10 +220,11 @@ void DuneShpFile::decodeFrame(std::istream &stream, uint16_t fileIndex, uint8_t*
 #else	    
 	    decodeDestination.resize(imageSize);	    
 	    _stream.read(reinterpret_cast<char*>(&decodeDestination.front()), imageSize);
-	    codec::fillZeros(decodeDestination, imageOut);
+	    codec::fillZeros(decodeDestination, _frames.at(fileIndex));
 #endif
 
-	    apply_pal_offsets(palOffsets, imageOut, imageOutSize);
+	    apply_pal_offsets(palOffsets, _frames.at(fileIndex), 
+                              _frames.at(fileIndex).size());
 	    break;
 
 	default:

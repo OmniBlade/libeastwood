@@ -48,10 +48,11 @@ private:
         uint8_t imgFormat;
         uint8_t refFormat;
     };
+    
     void decodeFrame(std::istream &stream, uint16_t frameIndex, uint8_t* imageOut);
     uint32_t getIndex(uint32_t offset);
-
-	std::vector<ShpFileEntry> _index;
+    
+    std::vector<ShpFileEntry> _index;
     unsigned int _width;
     unsigned int _height;
 };

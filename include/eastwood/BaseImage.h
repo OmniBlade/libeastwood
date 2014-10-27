@@ -31,7 +31,7 @@ public:
     unsigned int width() { return _width; }
     unsigned int height() { return _height; }
     unsigned int size() { return _height * _width; }
-    Palette getpalette() { return _palette; }
+    Palette getPalette() { return _palette; }
     
     void setPalette(Palette pal) { _palette = pal; }
 protected:

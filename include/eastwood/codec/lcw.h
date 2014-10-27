@@ -4,6 +4,7 @@
 #include "../StdDef.h"
 #include <istream>
 #include <ostream>
+#include <vector>
 
 namespace eastwood { namespace codec {
 

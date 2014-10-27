@@ -12,6 +12,7 @@ SET( LIBEASTWOOD_SRCS
   ArchiveManager.cpp
   BaseImage.cpp
   BlowFish.cpp
+  CnCShpFile.cpp
   CpsFile.cpp
   Decode.cpp
   Dune2File.cpp

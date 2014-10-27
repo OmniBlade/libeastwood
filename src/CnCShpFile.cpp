@@ -5,6 +5,7 @@
 
 #include "eastwood/Exception.h"
 #include "eastwood/CnCShpFile.h"
+#include "eastwood/IStream.h"
 #include "eastwood/codec/lcw.h"
 
 namespace eastwood {
@@ -74,7 +75,7 @@ CnCShpFile::CnCShpFile(std::istream &stream) :
     
     LOG_DEBUG("\nFMT20:%d\nFMT40:%d\nFMT80:%d", fmt20count, fmt40count, fmt80count);
     
-    for(uint32_t i = 0; i < size; i++) {
+    for(uint32_t i = 0; i < frames; i++) {
         uint8_t format = _index.at(i).imgFormat;
         uint32_t refindex;
         switch(format){
@@ -89,18 +90,12 @@ CnCShpFile::CnCShpFile(std::istream &stream) :
             _frames.push_back(_frames.at(i - 1)); 
             break;
         }
-        decodeFrame(_stream, i, static_cast<uint8_t*>_frames.at(i));
+        decodeFrame(_stream, i, _frames.at(i));
     }
 }
 
 CnCShpFile::~CnCShpFile()
 {
-}
-
-static void apply_pal_offsets(const std::vector<uint8_t> &offsets, uint8_t *data, uint16_t length)
-{
-    for (uint16_t i = 0; i < length; i++)
-	data[i] = offsets[data[i]];
 }
 
 #if 0
@@ -180,12 +175,11 @@ Surface CnCShpFile::getSurfaceArray(const uint8_t tilesX, const uint8_t tilesY, 
 
 void CnCShpFile::decodeFrame(std::istream &stream, uint16_t fileIndex, uint8_t* imageOut)
 {
-    if (fileIndex >= _index.size() - 2)
-    {
+    if (fileIndex >= _index.size() - 2) {
         throw(Exception(LOG_ERROR, "ShpFile", "Requested frame out of range"));
     }
     
-    IStream& _stream= reinterpret_cast<IStream&>(stream);
+    IStream& _stream = reinterpret_cast<IStream&>(stream);
     
     LOG_DEBUG("Frame %d Offset %d, format %d", fileIndex, _index.at(fileIndex).startOffset, _index.at(fileIndex).imgFormat);
     
@@ -207,13 +201,18 @@ void CnCShpFile::decodeFrame(std::istream &stream, uint16_t fileIndex, uint8_t* 
             codec::applyXorDelta(reinterpret_cast<uint8_t*>(&source.front()), imageOut);
             break;
         }
-        case 0x20:
+        case 0x20:{
             len = _index.at(fileIndex + 1).startOffset - _index.at(fileIndex).startOffset;
             source.resize(len);
             source.clear();
+            uint32_t before = _stream.tellg();
             _stream.read(reinterpret_cast<char*>(&source.front()), len);
+            uint32_t after = _stream.tellg();
+            LOG_DEBUG("before pos %ul, after pos %ul", before, after);
             codec::applyXorDelta(reinterpret_cast<uint8_t*>(&source.front()), imageOut);
+            LOG_DEBUG("xordelta applied");
             break;
+        }
         default:
             throw(Exception(LOG_ERROR, "ShpFile", "Image format not recognized"));
     }
