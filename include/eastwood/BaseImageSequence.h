@@ -4,6 +4,7 @@
 #include "BaseImage.h"
 #include "eastwood/Palette.h"
 #include <vector>
+#include <istream>
 
 namespace eastwood {
     
@@ -13,10 +14,11 @@ public:
         _frames(), _palette(pal) {};
     virtual ~BaseImageSequence() {};
     
-    BaseImage& operator[] (uint16_t i) { return _frames.at(i); }
-    uint16_t size() const throw() { return _frames.size(); };
+    virtual BaseImage& operator[] (uint16_t i) { return _frames.at(i); }
+    virtual uint16_t size() const throw() { return _frames.size(); }
     Palette palette() { return _palette; }
     void setPalette(Palette pal) { _palette = pal; }
+    
 protected:
     std::vector<BaseImage> _frames;
     Palette _palette;

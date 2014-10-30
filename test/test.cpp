@@ -9,7 +9,7 @@
 #include "eastwood/StringFile.h"
 #include "eastwood/OStream.h"
 #include "eastwood/PalFile.h"
-#include "eastwood/CnCShpFile.h"
+#include "eastwood/TmpFile.h"
 
 const char* mixes[] = {"tdtest.mix", "ratest.mix", "rasub.mix"};
 const char* strfiles[] = {"sole.eng", "conquer.eng", "setup.dip", "redalert.eng"};
@@ -30,14 +30,14 @@ int main(int argc, char** argv)
         printf("String 5: %s\n", str.getString(5).c_str());
     }
     infile.close();
-    infile.open("palette.cps", std::ios_base::in | std::ios_base::binary);
-    CpsFile cps(infile);
+    infile.open("temperat.pal", std::ios_base::in | std::ios_base::binary);
+    PalFile cps(infile);
     infile.close();
     Palette palette = cps.getPalette();
-    infile.open("einstein.shp", std::ios_base::in | std::ios_base::binary);
-    CnCShpFile shp(infile);
-    LOG_DEBUG("Getting shp frame");
-    Surface surf = shp[164].getSurface(palette);
+    infile.open("d05.tem", std::ios_base::in | std::ios_base::binary);
+    TmpFile shp(infile);
+    LOG_DEBUG("Getting tmp tile frame");
+    Surface surf = shp.getSurface(palette);
     OStream outfile;
     outfile.open("testing.bmp", std::ios_base::out | std::ios_base::binary);
     if(outfile.is_open()){

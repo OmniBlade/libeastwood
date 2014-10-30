@@ -33,7 +33,7 @@ BaseImage& BaseImage::operator =(const BaseImage& image)
 
 Surface BaseImage::getSurface()
 {
-    LOG_DEBUG("Getting surface from %d x %d image", _width, _height);
+    //LOG_DEBUG("Getting surface from %d x %d image", _width, _height);
     
     Surface surf(_width, _height, 8, _palette);
     memcpy(surf, *_pixels.get(), _height * _width);
@@ -43,7 +43,7 @@ Surface BaseImage::getSurface()
 
 Surface BaseImage::getSurface(Palette pal)
 {
-    LOG_DEBUG("Getting set pal surface from %d x %d image", _width, _height);
+    //LOG_DEBUG("Getting set pal surface from %d x %d image", _width, _height);
     
     Surface surf(_width, _height, 8, pal);
     memcpy(surf, *_pixels.get(), _height * _width);

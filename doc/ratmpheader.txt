@@ -1,0 +1,15 @@
+struct TMPHeader {
+word tile_x
+word tile_y
+dword tilecount //total tiles, including blank
+word x_tiles //these two are only in RA, let you work out how it looks for editor
+word y_tiles
+dword filesize
+dword dataoffset //offset of start of image data
+dword unknown1 //always 0???
+dword unknown2 //always FFFF0D1A in TD?
+dword offset1 // offset to sequence of bytes, images long
+dword offset2 // RA only, offset to sequence of bytes tilecount long, correseponds to terrain type
+dword offset3 //offset to sequence of bytes tilecount long, corresponds to image for each tile or 0xFF for blank tile.
+}
+

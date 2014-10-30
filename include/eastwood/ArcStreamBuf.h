@@ -206,12 +206,12 @@ protected:
     {
         unsigned int nread = 0;
 
-        if(ftell(_fp) > _eoffset) return 0;
+        if(ftell(_fp) >= _eoffset) return 0;
 
         if((ftell(_fp) + n) < _eoffset) {
             nread = fread(dest, 1, n, _fp);
         } else {
-            nread = fread(dest, 1, (ftell(_fp) + n) - (_eoffset - 1), _fp);
+            nread = fread(dest, 1,(ftell(_fp) + n) - (_eoffset + 1), _fp);
         }
 
         return nread;
@@ -231,7 +231,7 @@ protected:
                   (direction == std::ios_base::cur) ? ftell(_fp) + offset :
                                                       _eoffset + offset;
 
-        return std::fseek(_fp, pos, SEEK_SET) ? (-1) : pos - _soffset;
+        return fseek(_fp, pos, SEEK_SET) ? (-1) : pos - _soffset;
     }
     
     virtual pos_type seekpos(pos_type offset, openmode mode = std::ios_base::in | std::ios_base::out)
@@ -247,7 +247,7 @@ protected:
     
     virtual std::streamsize showmanyc()
     {
-        return ftell(_fp) <= _eoffset? ftell(_fp) - _eoffset : -1;
+        return ftell(_fp) <= _eoffset ? ftell(_fp) - _eoffset : -1;
     }
     
     FILE* _fp;

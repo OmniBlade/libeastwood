@@ -17,7 +17,7 @@ public:
         _width(width), 
         _height(height), 
         _pixels(new Bytes(new uint8_t[(_width * _height)])), 
-        _palette(0) { LOG_DEBUG("Base image created size %d", _width * _height); }
+        _palette(0) { }
     BaseImage(const BaseImage& image);
     virtual ~BaseImage() {}
     

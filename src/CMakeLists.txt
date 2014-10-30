@@ -34,6 +34,7 @@ SET( LIBEASTWOOD_SRCS
   Sound.cpp
   StringFile.cpp
   Surface.cpp
+  TmpFile.cpp
   VocFile.cpp
   WsaFile.cpp
   WsKey.cpp
