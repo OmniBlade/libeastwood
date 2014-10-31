@@ -80,6 +80,9 @@ static inline uint32_t htobe32(uint32_t x)
   #endif
 #endif
 
+#define HIBYTE(word) ((word) >> 8)
+#define LOBYTE(word) ((word) & 0xFF)
+
 namespace eastwood {
 
 static inline void delayMillis(uint32_t msec)

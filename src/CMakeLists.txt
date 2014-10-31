@@ -2,6 +2,7 @@ INCLUDE_DIRECTORIES(${LIBEASTWOOD_SOURCE_DIR}/include)
 
 
 SET( LIBEASTWOOD_SRCS
+  codec/adpcm.cpp
   codec/base64.cpp
   codec/format2.cpp
   codec/format40.cpp
@@ -10,6 +11,7 @@ SET( LIBEASTWOOD_SRCS
   codec/rle.cpp
   AdlFile.cpp
   ArchiveManager.cpp
+  AudFile.cpp
   BaseImage.cpp
   BlowFish.cpp
   CnCShpFile.cpp

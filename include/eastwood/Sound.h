@@ -29,39 +29,39 @@ enum Interpolator
 
 class Sound
 {
-    public:
-	Sound() : _size(0), _buffer(), _channels(0), _frequency(0), _format(FMT_INVALID) {};
-	Sound(uint32_t size, uint8_t *buffer, uint8_t channels, uint32_t frequency, AudioFormat format);
+public:
+    Sound() : _size(0), _buffer(), _channels(0), _frequency(0), _format(FMT_INVALID) {};
+    Sound(uint32_t size, uint8_t *buffer, uint8_t channels, uint32_t frequency, AudioFormat format);
     Sound(const Sound &sound);
-	virtual ~Sound();
+    virtual ~Sound();
 
-	virtual operator uint8_t*() const {
-	    return *_buffer.get();
-	}
-	virtual operator void*() const {
-	    return *_buffer.get();
-	}
+    virtual operator uint8_t*() const {
+        return *_buffer.get();
+    }
+    virtual operator void*() const {
+        return *_buffer.get();
+    }
     virtual operator bool() const {
         return _size != 0;
     }
 
-	uint32_t size() const throw() { return _size; }
-	uint8_t channels() const throw() { return _channels; }
-	uint32_t frequency() const throw() { return _frequency; }
-	AudioFormat format() const throw() { return _format; }
+    uint32_t size() const throw() { return _size; }
+    uint8_t channels() const throw() { return _channels; }
+    uint32_t frequency() const throw() { return _frequency; }
+    AudioFormat format() const throw() { return _format; }
 
-	Sound getResampled(uint8_t channels, uint32_t frequency, AudioFormat format, Interpolator interpolator = I_LINEAR);
-	void saveWAV(std::ostream &output);
+    Sound getResampled(uint8_t channels, uint32_t frequency, AudioFormat format, Interpolator interpolator = I_LINEAR);
+    void saveWAV(std::ostream &output);
 
-    protected:
-	template <typename T>
-	void getSound(Sound &sound, uint32_t samples, float *dataFloat, int32_t silenceLength);
+protected:
+    template <typename T>
+    void getSound(Sound &sound, uint32_t samples, float *dataFloat, int32_t silenceLength);
 
-   	uint32_t _size;
-   	BytesPtr _buffer;
-	uint8_t _channels;
-	uint32_t _frequency;
-	AudioFormat _format;
+    uint32_t _size;
+    BytesPtr _buffer;
+    uint8_t _channels;
+    uint32_t _frequency;
+    AudioFormat _format;
 };
 
 }
