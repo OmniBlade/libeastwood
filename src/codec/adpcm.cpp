@@ -3,6 +3,7 @@
 #include "eastwood/IStream.h"
 
 #include <vector>
+#include <limits>
 
 namespace eastwood { namespace codec {
 

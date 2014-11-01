@@ -83,6 +83,7 @@ public:
         if(_fp == NULL) return NULL;
 
         fseek(_fp, 0, SEEK_END);
+        _soffset = 0;
         _eoffset = ftell(_fp);
         fseek(_fp, _soffset, SEEK_SET);
 
@@ -205,15 +206,18 @@ protected:
     virtual std::streamsize xsgetn(char* dest, std::streamsize n)
     {
         unsigned int nread = 0;
+        unsigned int toread = 0;
 
-        if(ftell(_fp) >= _eoffset) return 0;
+        if(ftell(_fp) > _eoffset) return 0;
 
-        if((ftell(_fp) + n) < _eoffset) {
-            nread = fread(dest, 1, n, _fp);
+        if((ftell(_fp) + n) <= _eoffset) {
+            toread = n;
+            nread = fread(dest, 1, toread, _fp);
         } else {
-            nread = fread(dest, 1,(ftell(_fp) + n) - (_eoffset + 1), _fp);
+            toread = n - ((ftell(_fp) + n) - _eoffset);
+            nread = fread(dest, 1, toread, _fp);
         }
-
+        
         return nread;
     }
     
