@@ -62,7 +62,6 @@ void AudFile::getIMA(uint8_t* buffer)
     //initialise values for imaadpcm loop
     int sample = 0;
     int index = 0;
-    int chunk = 0;
     int decompressed = 0;
     while(readp < endp) {
         //get compressed size then move past chunk header
@@ -77,14 +76,33 @@ void AudFile::getIMA(uint8_t* buffer)
         readp += cmpsize;
         writep += size;
         decompressed += size;
-        chunk++;
     }
     LOG_DEBUG("Expected data %d, actual %d", _size, decompressed);
 }
 
 void AudFile::getWW(uint8_t* buffer)
 {
-    throw(Exception(LOG_ERROR, "AudFile", "WW compression not supported yet"));
+    uint8_t* readp = &_sound.at(0);
+    uint8_t* writep = buffer;
+    uint8_t* endp = readp + _compressedsize;
+    
+    //initialise values for imaadpcm loop
+    int decompressed = 0;
+    while(readp < endp) {
+        //get compressed size then move past chunk header
+        uint16_t cmpsize = *readp++;
+        cmpsize += *readp++ << 8;
+        uint16_t size = *readp++;
+        size += *readp++ << 8;
+        uint32_t id = *reinterpret_cast<uint32_t*>(readp);
+        readp += 4;
+        //decompress chunk, decoder will move pointers
+        codec::decodeWWS(readp, writep, cmpsize, size);
+        readp += cmpsize;
+        writep += size;
+        decompressed += size;
+    }
+    LOG_DEBUG("Expected data %d, actual %d", _size, decompressed);
 }
 
 } //eastwood

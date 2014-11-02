@@ -23,7 +23,11 @@ const int steps[89] = {
         16818, 18500, 20350, 22385, 24623, 27086,  29794, 32767
     };
 
-const int adjusts[8] = {-1,-1,-1,-1,2,4,6,8};
+const int adjusts[8] = {-1, -1, -1, -1, 2, 4, 6, 8};
+
+const int ws2bit[4] = {-2, -1, 0, 1};
+
+const int ws4bit[16] = {-9, -8, -6, -5, -4, -3, -2, -1, 0, 1,  2,  3,  4,  5,  6,  8};
 
 template<class OutputType, class InputType>
 OutputType Clip(InputType value, InputType min, InputType max)
@@ -44,14 +48,14 @@ OutputType Clip(InputType value)
 
 } //anon namespace
 
-void decodeIMA(std::istream& src, uint8_t* dest, uint16_t compressed_size, 
+void decodeIMA(std::istream& src, uint8_t* dest, uint16_t cmpsize, 
                int& sample, int& index) 
 {
     IStream& _stream= reinterpret_cast<IStream&>(src);
-    if (compressed_size==0)
+    if (cmpsize==0)
             return;
 
-    uint16_t uncompressed_size = compressed_size * 2;
+    uint16_t uncompressed_size = cmpsize * 2;
 
     int16_t* dest16bit = reinterpret_cast<int16_t*>(dest);
 
@@ -90,13 +94,13 @@ void decodeIMA(std::istream& src, uint8_t* dest, uint16_t compressed_size,
     }
 }
 
-void decodeIMA(uint8_t* src, uint8_t* dest, uint16_t compressed_size, 
+void decodeIMA(uint8_t* src, uint8_t* dest, uint16_t cmpsize, 
                int& sample, int& index) 
 {
-    if (compressed_size==0)
+    if (cmpsize==0)
             return;
 
-    uint16_t uncompressed_size = compressed_size * 2;
+    uint16_t uncompressed_size = cmpsize * 2;
 
     int16_t* dest16bit = reinterpret_cast<int16_t*>(dest);
 
@@ -134,5 +138,77 @@ void decodeIMA(uint8_t* src, uint8_t* dest, uint16_t compressed_size,
         index = Clip<uint8_t>(index, 0, 88);
     }
 }
+
+void decodeWWS(uint8_t* src, uint8_t* dest, uint16_t cmpsize, uint16_t size)
+{
+    int16_t sample;
+    uint8_t  code;
+    int8_t  count;
+    uint16_t i;
+    uint16_t shifted;
+
+    if (cmpsize == size) {
+        memcpy(dest, src, size);
+        return;
+    }
+
+    sample = 0x80;
+    i = 0;
+
+    uint16_t remaining = size;
+    while (remaining > 0) { // expecting more output
+        shifted = src[i++];
+        shifted <<= 2;
+        code = HIBYTE(shifted);
+        count = LOBYTE(shifted)>>2;
+        
+        switch(code) {
+        case 2: // no compression...
+            if (count & 0x20) {
+                count <<= 3;  // here it's significant that (count) is signed:
+                sample += count >> 3; // the sign bit will be copied by these shifts!
+                *dest++ = Clip<uint8_t>(sample);
+                remaining--; // one byte added to output
+            } else {
+                
+                for (++count; count > 0; --count) {
+                    --remaining;
+                    *dest++ = src[i++];
+                }
+
+                sample = src[i-1]; // set (sample) to the last byte sent to output
+            }
+            break;
+        case 1: // ADPCM 8-bit -> 4-bit
+            for (count++; count > 0; count--) { // decode (count+1) bytes
+                code = src[i++];
+                sample += ws4bit[(code & 0x0F)]; // lower nibble
+                *dest++ = Clip<unsigned char>(sample);
+                sample += ws4bit[(code >> 4)]; // higher nibble
+                *dest++ =  Clip<unsigned char>(sample);
+                remaining -= 2; // two bytes added to output
+            }
+            break;
+        case 0: // ADPCM 8-bit -> 2-bit
+            for (count++; count > 0; count--) { // decode (count+1) bytes
+                code = src[i++];
+                sample += ws2bit[(code & 0x03)]; // lower 2 bits
+                *dest++ =  Clip<unsigned char>(sample);
+                sample += ws2bit[((code>>2) & 0x03)]; // lower middle 2 bits
+                *dest++ =  Clip<unsigned char>(sample);
+                sample += ws2bit[((code>>4) & 0x03)]; // higher middle 2 bits
+                *dest++ =  Clip<unsigned char>(sample);
+                sample += ws2bit[((code>>6) & 0x03)]; // higher 2 bits
+                *dest++ =  Clip<unsigned char>(sample);
+                remaining -= 4; // 4 bytes sent to output
+            }
+            break;
+        default: // just copy (sample) (count+1) times to output
+            for (count++; count > 0; count--, remaining--)
+                *dest++ = Clip<unsigned char>(sample);
+        }
+    }
+}
+
 
 } } //eastwood codec

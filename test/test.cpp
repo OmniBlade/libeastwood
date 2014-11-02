@@ -55,7 +55,7 @@ int main(int argc, char** argv)
     
     //sound test
     IStream audinfile;
-    audinfile.open("abldgin1.aud", std::ios_base::in | std::ios_base::binary);
+    audinfile.open("nuyell10.aud", std::ios_base::in | std::ios_base::binary);
     if(audinfile.is_open()) {
         LOG_DEBUG("in file is open");
     }
@@ -68,28 +68,6 @@ int main(int argc, char** argv)
             //pal.writePcx(outfile);
         }
     outfile.close();
-    //outfile.open("testing.cps", std::ios_base::out | std::ios_base::binary);
-    //pal.writeCps(outfile);
-    //outfile.close();
-    #if 0
-    infile.open("mouse.shp", std::ios_base::in | std::ios_base::binary);
-    if(infile.is_open()){
-        LOG_INFO("Opening shp file");
-        DuneShpFile fileformat(infile, pal.getPalette(), SHP_DUNE2);
-        LOG_INFO("Shp has %d fames", fileformat.size());
-        OStream outfile;
-        outfile.open("testing.bmp", std::ios_base::out | std::ios_base::binary);
-        //Format20 in einstein 13 164 not working
-        Surface surface = fileformat.getSurface(13);
-        if(outfile.is_open()){
-            LOG_INFO("Out stream is open");
-            surface.saveBMP(outfile);
-        }
-    } else {
-        LOG_DEBUG("File not open");
-    }
-    infile.close();
-    #endif
     
     return 0;
 }
