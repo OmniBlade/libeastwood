@@ -48,7 +48,7 @@ Sound AudFile::getSound()
         throw(Exception(LOG_ERROR, "AudFile", "Compression format not supported"));
     }
     
-    LOG_DEBUG("Creating sound object for format %d", format);
+    LOG_DEBUG("Creating sound object for format %d, channels %d", format, channels);
     //create sound object from decode buffer, object takes ownership
     return Sound(_size, buffer, channels, _frequency, format);
 }
@@ -77,7 +77,6 @@ void AudFile::getIMA(uint8_t* buffer)
         writep += size;
         decompressed += size;
     }
-    LOG_DEBUG("Expected data %d, actual %d", _size, decompressed);
 }
 
 void AudFile::getWW(uint8_t* buffer)
@@ -102,7 +101,6 @@ void AudFile::getWW(uint8_t* buffer)
         writep += size;
         decompressed += size;
     }
-    LOG_DEBUG("Expected data %d, actual %d", _size, decompressed);
 }
 
 } //eastwood

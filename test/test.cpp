@@ -55,13 +55,13 @@ int main(int argc, char** argv)
     
     //sound test
     IStream audinfile;
-    audinfile.open("nuyell10.aud", std::ios_base::in | std::ios_base::binary);
+    audinfile.open("abldgin1.aud", std::ios_base::in | std::ios_base::binary);
     if(audinfile.is_open()) {
         LOG_DEBUG("in file is open");
     }
     AudFile aud(audinfile);
     audinfile.close();
-    outfile.open("testing.wav", std::ios_base::out | std::ios_base::binary);
+    outfile.open("testing2.wav", std::ios_base::out | std::ios_base::binary);
     if(outfile.is_open()){
             LOG_INFO("Out stream is open");
             aud.getSound().saveWAV(outfile);
