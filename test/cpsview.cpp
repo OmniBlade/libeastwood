@@ -1,4 +1,4 @@
-#include "eastwood/IStream.h"
+#include "eastwood/ArcIStream.h"
 #include "eastwood/StdDef.h"
 #include "eastwood/SDL/Surface.h"
 #include "eastwood/CpsFile.h"
@@ -15,7 +15,7 @@ using namespace eastwood;
 
 int main(int argc, char** argv)
 {
-    IStream infile;
+    ArcIStream infile;
     infile.open(argv[1]);
     if(!infile.is_open()) {
         LOG_ERROR("Could not open file.");

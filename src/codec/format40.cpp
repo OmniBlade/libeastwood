@@ -1,4 +1,5 @@
 #include "eastwood/codec/format40.h"
+#include "eastwood/Log.h"
 
 namespace eastwood { namespace codec {
 

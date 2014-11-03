@@ -2,8 +2,10 @@
 #define	EASTWOOD_ARCHIVEMANAGER_H
 
 #include "StdDef.h"
+#include "ArcIOStream.h"
 #include "IOStream.h"
 #include "DirEnt.h"
+#include "ArcFileInfo.h"
 #include <vector>
 #include <map>
 
@@ -16,7 +18,8 @@ namespace eastwood {
 class ArchiveManager
 {
 public:
-    ArchiveManager() : _archives(0), _stream(), _nullinfo() {}
+    ArchiveManager() : _archives(0), _arcstream(), _nullinfo() 
+    { }
     size_t indexDir(std::string path);
     size_t indexPak(std::string pakfile, bool usefind = false);
     size_t indexMix(std::string mixfile, bool usefind = false);
@@ -29,7 +32,7 @@ private:
     void handleEncrypted(ArcFileInfo& archive);
     void handleUnEncrypted(ArcFileInfo& archive, uint16_t filecount);
     std::vector<t_arc_index> _archives;
-    IOStream _stream;
+    ArcIOStream _arcstream;
     ArcFileInfo _nullinfo;
 };
 

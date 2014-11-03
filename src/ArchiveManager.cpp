@@ -61,6 +61,7 @@ size_t ArchiveManager::indexDir(std::string path)
 
 size_t ArchiveManager::indexPak(std::string pakfile, bool usefind)
 {
+    IOStream& _stream = reinterpret_cast<IOStream&>(static_cast<std::istream&>(_arcstream));
     uint32_t flags;
     uint16_t filecount;
     char name[256];
@@ -70,15 +71,15 @@ size_t ArchiveManager::indexPak(std::string pakfile, bool usefind)
     
     if(usefind) {
         archive = find(pakfile);
-        _stream.open(archive);
+        _arcstream.open(archive);
     } else {
-        _stream.open(pakfile.c_str(), std::ios_base::binary | std::ios_base::in);
+        _arcstream.open(pakfile.c_str(), std::ios_base::binary | std::ios_base::in);
         archive.archivepath = pakfile;
         archive.start = 0;
         archive.size = _stream.sizeg();
     }
     
-    if(!_stream.is_open())
+    if(!_arcstream.is_open())
         throw(Exception(LOG_ERROR, "ArchiveManager", "Could not open Pak"));
     
     //initialise a fresh map object
@@ -107,13 +108,14 @@ size_t ArchiveManager::indexPak(std::string pakfile, bool usefind)
             throw(Exception(LOG_ERROR, "ArchiveManager", "Invalid Pak format"));
     }
     
-    _stream.close();
+    _arcstream.close();
     
     return _archives.size() - 1;
 }
 
 size_t ArchiveManager::indexMix(std::string mixfile, bool usefind)
 {
+    IOStream& _stream = reinterpret_cast<IOStream&>(static_cast<std::istream&>(_arcstream));
     uint32_t flags;
     uint16_t filecount;
     //std::string archivename;
@@ -122,15 +124,15 @@ size_t ArchiveManager::indexMix(std::string mixfile, bool usefind)
     
     if(usefind) {
         archive = find(mixfile);
-        _stream.open(archive);
+        _arcstream.open(archive);
     } else {
-        _stream.open(mixfile.c_str(), std::ios_base::binary | std::ios_base::in);
+        _arcstream.open(mixfile.c_str(), std::ios_base::binary | std::ios_base::in);
         archive.archivepath = mixfile;
         archive.start = 0;
         archive.size = _stream.sizeg();
     }
     
-    if(!_stream.is_open())
+    if(!_arcstream.is_open())
         throw(Exception(LOG_ERROR, "ArchiveManager", "Could not open Mix"));
     
     flags = _stream.getU32LE();
@@ -143,13 +145,14 @@ size_t ArchiveManager::indexMix(std::string mixfile, bool usefind)
         handleEncrypted(archive);
     }
     
-    _stream.close();
+    _arcstream.close();
     
     return _archives.size() - 1;
 }
 
 void ArchiveManager::handleUnEncrypted(ArcFileInfo& archive, uint16_t filecount)
 {
+    IOStream& _stream = reinterpret_cast<IOStream&>(static_cast<std::istream&>(_arcstream));
     uint32_t offset = 6;  //at least 6 at this point
     t_arc_entry entry;
     std::pair<t_arc_index_iter,bool> rv;
@@ -186,6 +189,7 @@ void ArchiveManager::handleUnEncrypted(ArcFileInfo& archive, uint16_t filecount)
 
 void ArchiveManager::handleEncrypted(ArcFileInfo& archive)
 {
+    IOStream& _stream = reinterpret_cast<IOStream&>(static_cast<std::istream&>(_arcstream));
     uint32_t offset = 84 + archive.start;     //at least 84 at this point
     uint32_t filecount;
     Cblowfish bfish;

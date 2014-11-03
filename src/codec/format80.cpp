@@ -1,7 +1,9 @@
 #include "eastwood/codec/format80.h"
 #include "eastwood/Exception.h"
+#include "eastwood/Log.h"
 
 #include <algorithm>
+#include <vector>
 
 namespace eastwood { namespace codec {
 

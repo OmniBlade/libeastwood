@@ -1,4 +1,4 @@
-#include "eastwood/IStream.h"
+#include "eastwood/ArcIStream.h"
 #include "eastwood/ArchiveManager.h"
 #include "eastwood/Log.h"
 #include "eastwood/IniFile.h"
@@ -7,9 +7,9 @@
 #include "eastwood/CpsFile.h"
 #include "eastwood/FntFile.h"
 #include "eastwood/StringFile.h"
-#include "eastwood/OStream.h"
+#include "eastwood/ArcOStream.h"
 #include "eastwood/PalFile.h"
-#include "eastwood/CnCShpFile.h"
+#include "eastwood/WsaFile.h"
 #include "eastwood/AudFile.h"
 
 const char* mixes[] = {"tdtest.mix", "ratest.mix", "rasub.mix"};
@@ -24,7 +24,7 @@ int main(int argc, char** argv)
     arcman.indexDir(".");
     arcman.indexMix("ratest.mix", true);
     arcman.indexMix("rasub.mix", true);
-    IStream infile;
+    ArcIStream infile;
     
     //string file & mix test
     infile.open(arcman.find("setup.dip"));
@@ -39,22 +39,23 @@ int main(int argc, char** argv)
     PalFile cps(infile);
     infile.close();
     Palette palette = cps.getPalette();
-    infile.open("einstein.shp", std::ios_base::in | std::ios_base::binary);
-    CnCShpFile shp(infile);
+    infile.open("sov-tran.wsa", std::ios_base::in | std::ios_base::binary);
+    WsaFile shp(infile);
     LOG_DEBUG("Getting tmp tile frame");
-    Surface surf = shp[164].getSurface(palette);
-    OStream outfile;
+    Surface surf = shp[5].getSurface();
+    ArcOStream outfile;
     outfile.open("testing.bmp", std::ios_base::out | std::ios_base::binary);
     if(outfile.is_open()){
             LOG_INFO("Out stream is open");
-            surf.saveBMP(outfile);
+            //surf.saveBMP(outfile);
             //pal.writePcx(outfile);
         }
     outfile.close();
     infile.close();
     
     //sound test
-    IStream audinfile;
+    LOG_INFO("Testing aud handling");
+    ArcIStream audinfile;
     audinfile.open("abldgin1.aud", std::ios_base::in | std::ios_base::binary);
     if(audinfile.is_open()) {
         LOG_DEBUG("in file is open");

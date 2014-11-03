@@ -1,4 +1,4 @@
-#include "eastwood/IStream.h"
+#include "eastwood/ArcIStream.h"
 #include "eastwood/StdDef.h"
 #include "eastwood/SDL/Surface.h"
 #include "eastwood/CnCShpFile.h"
@@ -14,7 +14,7 @@ using namespace eastwood;
 int main(int argc, char** argv)
 {
     LOG_DEBUG("Starting WSA Viewer");
-    IStream infile;
+    ArcIStream infile;
     infile.open("palette.cps", std::ios_base::in | std::ios_base::binary);
     CpsFile cps(infile);
     infile.close();

@@ -89,7 +89,7 @@ public:
 
         //reposition to end if needed
         if(is_ate) fseek(_fp, 0, SEEK_END);
-
+        LOG_DEBUG("Opened file from filename");
         return this;
     }
     
@@ -106,7 +106,7 @@ public:
         } else {
             _soffset = _eoffset = 0;
         }
-        
+        LOG_DEBUG("Opened file from archive");
         return this;
     }
     
@@ -116,6 +116,7 @@ public:
         _eoffset = 0;
         if(_fp != NULL)
         {
+            LOG_DEBUG("closed file and nulled pointer");
             fclose(_fp);
             _fp = NULL;
         }
