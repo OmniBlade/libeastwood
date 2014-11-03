@@ -18,7 +18,7 @@ namespace eastwood {
 class ArchiveManager
 {
 public:
-    ArchiveManager() : _archives(0), _arcstream(), _nullinfo() 
+    ArchiveManager() : _archives(0), _stream(), _nullinfo() 
     { }
     size_t indexDir(std::string path);
     size_t indexPak(std::string pakfile, bool usefind = false);
@@ -32,7 +32,7 @@ private:
     void handleEncrypted(ArcFileInfo& archive);
     void handleUnEncrypted(ArcFileInfo& archive, uint16_t filecount);
     std::vector<t_arc_index> _archives;
-    ArcIOStream _arcstream;
+    ArcIOStream _stream;
     ArcFileInfo _nullinfo;
 };
 

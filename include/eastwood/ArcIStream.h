@@ -1,7 +1,7 @@
-#ifndef ARCEASTWOOD_ISTREAM_H
-#define ARCEASTWOOD_ISTREAM_H
+#ifndef EASTWOOD_ARCISTREAM_H
+#define EASTWOOD_ARCISTREAM_H
 
-//#include <istream>
+#include "IStream.h"
 #include "ArcStreamBuf.h"
 
 #include "eastwood/StdDef.h"
@@ -10,7 +10,7 @@ namespace eastwood {
 
 template < typename CharType, typename CharTraits = std::char_traits <CharType> >
 
-class basic_arcistream : public std::basic_istream <CharType, CharTraits>
+class basic_arcistream : public basic_eastistream <CharType, CharTraits>
 {
 public:
     typedef CharType                                      char_type;
@@ -19,7 +19,7 @@ public:
     typedef basic_arcstream         <char_type, traits_type>  sbuf_type;
     typedef std::basic_streambuf    <char_type, traits_type>  bbuf_type;
     typedef basic_arcistream        <char_type, traits_type>  this_type;
-    typedef std::basic_istream      <char_type, traits_type>  base_type;
+    typedef basic_eastistream       <char_type, traits_type>  base_type;
     
     basic_arcistream(FILE* fp = NULL) :
     base_type(new sbuf_type(fp))
@@ -79,4 +79,4 @@ typedef basic_arcistream<char>  ArcIStream;
 
 }
 
-#endif // EASTWOOD_ISTREAM_H
+#endif // EASTWOOD_ARCISTREAM_H

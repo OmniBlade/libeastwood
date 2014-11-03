@@ -28,10 +28,7 @@ SET( LIBEASTWOOD_SRCS
   IcnFile.cpp
   IffFile.cpp
   IniFile.cpp
-  IStream.cpp
-  IOStream.cpp
   MapFile.cpp
-  OStream.cpp
   PakFile.cpp
   Palette.cpp
   PalFile.cpp
