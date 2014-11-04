@@ -38,6 +38,7 @@ SET( LIBEASTWOOD_SRCS
   Surface.cpp
   TmpFile.cpp
   VocFile.cpp
+  VqpFile.cpp
   WsaFile.cpp
   WsKey.cpp
   XmiFile.cpp

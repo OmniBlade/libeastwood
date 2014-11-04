@@ -53,6 +53,8 @@ int main(int argc, char** argv)
     outfile.close();
     infile.close();
     
+    LOG_DEBUG("Colour struct size %d", sizeof(Color));
+    
     //sound test
     LOG_INFO("Testing aud handling");
     ArcIStream audinfile;

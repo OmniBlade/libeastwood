@@ -89,7 +89,6 @@ public:
 
         //reposition to end if needed
         if(is_ate) fseek(_fp, 0, SEEK_END);
-        LOG_DEBUG("Opened file from filename %s", filename);
         return this;
     }
     
@@ -106,7 +105,6 @@ public:
         } else {
             _soffset = _eoffset = 0;
         }
-        LOG_DEBUG("Opened file from archive");
         return this;
     }
     
@@ -116,7 +114,6 @@ public:
         _eoffset = 0;
         if(_fp != NULL)
         {
-            LOG_DEBUG("closed file and nulled pointer");
             fclose(_fp);
             _fp = NULL;
         }
@@ -207,16 +204,13 @@ protected:
     virtual std::streamsize xsgetn(char* dest, std::streamsize n)
     {
         unsigned int nread = 0;
-        unsigned int toread = 0;
 
         if(ftell(_fp) > _eoffset) return 0;
 
         if((ftell(_fp) + n) <= _eoffset) {
-            toread = n;
-            nread = fread(dest, 1, toread, _fp);
+            nread = fread(dest, 1, n, _fp);
         } else {
-            toread = n - ((ftell(_fp) + n) - _eoffset);
-            nread = fread(dest, 1, toread, _fp);
+            nread = fread(dest, 1, n - ((ftell(_fp) + n) - _eoffset), _fp);
         }
         
         return nread;

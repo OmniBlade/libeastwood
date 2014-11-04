@@ -6,7 +6,13 @@
 
 namespace eastwood {
 
+namespace {
+
 const uint32_t ENCRYPTED = 0x00020000;
+
+ArcFileInfo BLANK = {0, 0, std::string()};
+
+}
     
 size_t ArchiveManager::indexDir(std::string path)
 {
@@ -61,8 +67,8 @@ size_t ArchiveManager::indexDir(std::string path)
 
 size_t ArchiveManager::indexPak(std::string pakfile, bool usefind)
 {
-    uint32_t flags;
-    uint16_t filecount;
+    //uint32_t flags;
+    //uint16_t filecount;
     char name[256];
     ArcFileInfo archive;
     t_arc_entry entry;
@@ -92,7 +98,7 @@ size_t ArchiveManager::indexPak(std::string pakfile, bool usefind)
         uint32_t size;
 
 	_stream.getline(name, 256, 0);
-        LOG_DEBUG("PakFile", "Found file %s", name);
+        LOG_DEBUG("Found file %s", name);
 
         size = ((offset = _stream.getU32LE()) != 0 ? offset : _stream.sizeg()) - start;
         
@@ -279,7 +285,7 @@ ArcFileInfo& ArchiveManager::find(std::string filename)
     }
     
     LOG_DEBUG("Couldn't find file of id %08x", id);
-    return _nullinfo;
+    return BLANK;
 }
 
 }//eastwood

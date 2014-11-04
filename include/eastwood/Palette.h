@@ -28,10 +28,11 @@ public:
     }
 
     uint16_t size() const throw() { return _palette.size(); }
-
+    uint8_t nearest(Color a);
     bool savePAL(std::ostream &output, bool fullpal = false);
 
 protected:
+    double colorDistance(Color cola, Color colb);
     std::vector<Color> _palette;
 };
 
