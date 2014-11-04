@@ -6,7 +6,10 @@
 enum arctype {
     ARC_DIR = 0,
     ARC_PAK = 1,
-    ARC_MIX = 2
+    ARC_MIX = 2,
+    ARC_ISO = 3,
+    ARC_ISH = 4
+    
 };
 
 struct ArcFileInfo
@@ -14,7 +17,7 @@ struct ArcFileInfo
     int start;
     int size;
     arctype type;
-    bool cached;
+    char* cache;
     std::string archivepath;
 };
 

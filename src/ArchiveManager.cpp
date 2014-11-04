@@ -10,7 +10,9 @@ namespace {
 
 const uint32_t ENCRYPTED = 0x00020000;
 
-ArcFileInfo BLANK = {0, 0, ARC_DIR, false, std::string()};
+const int ISO_BLKSIZE = 2048;
+
+ArcFileInfo BLANK = {0, 0, ARC_DIR, NULL, std::string()};
 
 }
     
@@ -154,6 +156,34 @@ size_t ArchiveManager::indexMix(std::string mixfile, bool usefind)
     _stream.close();
     
     return _archives.size() - 1;
+}
+
+size_t ArchiveManager::indexIso(std::string isofile, bool usefind)
+{
+    
+    ArcFileInfo archive;
+    t_arc_entry entry;
+    std::pair<t_arc_index_iter,bool> rv;
+    
+    if(usefind) {
+        archive = find(isofile);
+        _stream.open(archive);
+    } else {
+        _stream.open(isofile.c_str(), std::ios_base::binary | std::ios_base::in);
+        archive.archivepath = isofile;
+        archive.start = 0;
+        archive.size = _stream.sizeg();
+    }
+    
+    //seek to start of ISO primary descriptor
+    _stream.seekg(16 * ISO_BLKSIZE, std::ios_base::beg);
+    
+    return 0;
+}
+
+size_t ArchiveManager::indexIsz(std::string iszfile, bool usefind)
+{
+    return 0;
 }
 
 void ArchiveManager::handleUnEncrypted(ArcFileInfo& archive, uint16_t filecount)

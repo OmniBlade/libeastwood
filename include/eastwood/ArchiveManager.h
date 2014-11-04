@@ -25,6 +25,8 @@ public:
     size_t indexDir(std::string path);
     size_t indexPak(std::string pakfile, bool usefind = false);
     size_t indexMix(std::string mixfile, bool usefind = false);
+    size_t indexIso(std::string isofile, bool usefind = false);
+    size_t indexIsz(std::string iszfile, bool usefind = false);
     ArcFileInfo& find(std::string filename);
     int size() { return _archives.size(); }
     bool empty() { return _archives.empty(); }
