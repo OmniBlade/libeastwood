@@ -22,6 +22,7 @@ PalFile::PalFile(std::istream &stream, bool fullpal) : _palette(256)
             _palette[i].g = stream.get()<<2;
             _palette[i].b = stream.get()<<2;
             _palette[i].unused = 0;
+            //LOG_DEBUG("Red %d, green %d, blue %d", _palette[i].r, _palette[i].g, _palette[i].b);
         }
     }
 }

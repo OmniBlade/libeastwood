@@ -34,5 +34,6 @@ public:
 protected:
     std::vector<Color> _palette;
 };
+
 }
 #endif // EASTWOOD_PALETTE_H

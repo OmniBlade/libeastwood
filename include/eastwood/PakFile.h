@@ -4,7 +4,7 @@
 #include <map>
 #include <vector>
 
-#include "eastwood/IOStream.h"
+#include "IOStream.h"
 
 namespace eastwood {
 

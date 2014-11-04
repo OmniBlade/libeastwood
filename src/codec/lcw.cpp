@@ -10,7 +10,6 @@ namespace eastwood { namespace codec {
     
 int decodeLCW(const uint8_t* source, uint8_t* dest)
 {
-    LOG_DEBUG("LCW decode from buffer");
     uint8_t *start = dest;
     //uint8_t *end = dest + destsize;
 
@@ -102,7 +101,6 @@ int decodeLCW(const uint8_t* source, uint8_t* dest)
 
 int decodeLCW(std::istream& stream, uint8_t* dest)
 {
-    LOG_DEBUG("LCW decode from stream");
     IStream& _stream= reinterpret_cast<IStream&>(stream);
     uint8_t *start = dest;
     //uint8_t *end = dest + destsize;

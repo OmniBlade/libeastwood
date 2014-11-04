@@ -20,6 +20,8 @@ public:
     typedef basic_eastistream       <char_type, traits_type>  this_type;
     typedef std::basic_istream      <char_type, traits_type>  base_type;
     
+    basic_eastistream() {}
+    
     basic_eastistream(bbuf_type* sb) :
     base_type(sb)
     {}

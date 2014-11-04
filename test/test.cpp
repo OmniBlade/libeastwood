@@ -42,12 +42,12 @@ int main(int argc, char** argv)
     infile.open("sov-tran.wsa", std::ios_base::in | std::ios_base::binary);
     WsaFile shp(infile);
     LOG_DEBUG("Getting tmp tile frame");
-    Surface surf = shp[5].getSurface();
+    Surface surf = shp[5].getSurface(shp.palette());
     ArcOStream outfile;
     outfile.open("testing.bmp", std::ios_base::out | std::ios_base::binary);
     if(outfile.is_open()){
             LOG_INFO("Out stream is open");
-            //surf.saveBMP(outfile);
+            surf.saveBMP(outfile);
             //pal.writePcx(outfile);
         }
     outfile.close();

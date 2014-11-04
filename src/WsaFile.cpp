@@ -42,6 +42,7 @@ WsaFile::WsaFile(std::istream &stream, Palette palette) :
     LOG_DEBUG("WsaFile size %d x %d", _width, _height);
     
     if(newformat){
+        LOG_DEBUG("WSA is new format (C&C)");
         _deltaBufferSize = _stream.getU32LE();
         
         _frameOffsTable.resize(frameCount + 2);
@@ -52,7 +53,7 @@ WsaFile::WsaFile(std::istream &stream, Palette palette) :
         }
         
     } else {
-        
+        LOG_DEBUG("WSA is old format (Dune2)");
         _deltaBufferSize = _stream.getU16LE();
         
         // "Regular" WSA files shipped with the Dune 2 demo version does not have

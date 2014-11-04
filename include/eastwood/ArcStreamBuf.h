@@ -89,7 +89,7 @@ public:
 
         //reposition to end if needed
         if(is_ate) fseek(_fp, 0, SEEK_END);
-        LOG_DEBUG("Opened file from filename");
+        LOG_DEBUG("Opened file from filename %s", filename);
         return this;
     }
     

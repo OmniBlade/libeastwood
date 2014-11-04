@@ -20,6 +20,8 @@ public:
     typedef basic_eastiostream       <char_type, traits_type>  this_type;
     typedef std::basic_iostream      <char_type, traits_type>  base_type;
     
+    basic_eastiostream() {}
+    
     basic_eastiostream(bbuf_type* sb) :
     base_type(sb)
     {}
@@ -223,7 +225,7 @@ public:
 };
 
 typedef basic_eastiostream<char>  iostream;
-typedef basic_eastiostream<char>  IStream;
+typedef basic_eastiostream<char>  IOStream;
 
 }
 

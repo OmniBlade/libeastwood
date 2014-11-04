@@ -14,10 +14,10 @@ int main(int argc, char** argv)
 {
     LOG_DEBUG("Starting WSA Viewer");
     ArcIStream infile;
-    infile.open("ibm.pal", std::ios_base::in | std::ios_base::binary);
-    PalFile pal(infile);
-    Palette palette = pal.getPalette();
-    infile.close();
+    //infile.open("ibm.pal", std::ios_base::in | std::ios_base::binary);
+    //PalFile pal(infile);
+    //Palette palette = pal.getPalette();
+    //infile.close();
     
     infile.open(argv[1], std::ios_base::in | std::ios_base::binary);
     if(!infile.is_open()) {
@@ -34,6 +34,7 @@ int main(int argc, char** argv)
     SDL_Init( SDL_INIT_EVERYTHING );
     LOG_INFO("Loading WSA file %s", argv[1]);
     WsaFile wsa(infile);
+    infile.close();
     frames = wsa.size();
     
     window = SDL_SetVideoMode(wsa[0].width(), wsa[0].height(), 32, SDL_SWSURFACE );
@@ -68,5 +69,4 @@ int main(int argc, char** argv)
         SDL_Flip(window);
         SDL_Delay(250);
     }
-    
 }
