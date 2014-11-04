@@ -8,6 +8,14 @@
 
 namespace eastwood {
 
+/**
+ * @brief Aud Files
+ * 
+ * Aud files contain either signed little endian 16bit audio compressed with 
+ * IMA ADPCM or unsigned little endian 8bit audio compressed with WestWood
+ * Studios own ADPCM compression scheme. 
+ *      
+ */
 class AudFile
 {
 public:
