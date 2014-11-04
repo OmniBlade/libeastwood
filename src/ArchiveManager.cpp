@@ -10,7 +10,7 @@ namespace {
 
 const uint32_t ENCRYPTED = 0x00020000;
 
-ArcFileInfo BLANK = {0, 0, std::string()};
+ArcFileInfo BLANK = {0, 0, ARC_DIR, false, std::string()};
 
 }
     
@@ -51,6 +51,7 @@ size_t ArchiveManager::indexDir(std::string path)
         entry.second.archivepath = filepath;
         entry.second.size = st.st_size;
         entry.second.start = 0;
+        entry.second.type = ARC_DIR;
         
         rv = _archives.back().insert(entry);
         
@@ -106,6 +107,7 @@ size_t ArchiveManager::indexPak(std::string pakfile, bool usefind)
         entry.second.start = start + archive.start;
         entry.second.size = size;
         entry.second.archivepath = archive.archivepath;
+        entry.second.type = ARC_PAK;
         rv = _archives.back().insert(entry);
         
         //if insertion failed, assume bad format.
@@ -181,6 +183,7 @@ void ArchiveManager::handleUnEncrypted(ArcFileInfo& archive, uint16_t filecount)
         entry.second.start = _stream.getU32LE() + offset + archive.start;
         entry.second.size = _stream.getU32LE();
         entry.second.archivepath = archive.archivepath;
+        entry.second.type = ARC_MIX;
         rv = _archives.back().insert(entry);
         
         //if insertion failed, assume bad format.
@@ -226,7 +229,7 @@ void ArchiveManager::handleEncrypted(ArcFileInfo& archive)
     memcpy(pindbuf, bfishbuf + 6 , 2);
     
     //loop to decrypt index into index buffer
-    for(int i = 0; i < bcount; i++) {
+    for(unsigned int i = 0; i < bcount; i++) {
         _stream.read(reinterpret_cast<char*>(bfishbuf), 8);
         bfish.decipher(reinterpret_cast<void*>(bfishbuf), 
                     reinterpret_cast<void*>(bfishbuf), 8);
@@ -246,6 +249,7 @@ void ArchiveManager::handleEncrypted(ArcFileInfo& archive)
         
         entry.second.start += offset;
         entry.second.archivepath = archive.archivepath;
+        entry.second.type = ARC_MIX;
         rv = _archives.back().insert(entry);
         
         //if insertion failed, assume bad format.
@@ -279,9 +283,9 @@ ArcFileInfo& ArchiveManager::find(std::string filename)
 {  
     int32_t id = idGen(filename);
     
-    for(size_t i = 0; i < _archives.size(); i++) {
-        t_arc_index_iter info = _archives.at(i).find(id);
-        if(info != _archives.at(i).end()) return info->second;
+    for(t_archive_iter it = _archives.begin(); it != _archives.end(); it++) {
+        t_arc_index_iter info = it->find(id);
+        if(info != it->end()) return info->second;
     }
     
     LOG_DEBUG("Couldn't find file of id %08x", id);
