@@ -37,6 +37,7 @@ protected:
 private:
     void handleEncrypted(ArcFileInfo& archive);
     void handleUnEncrypted(ArcFileInfo& archive, uint16_t filecount);
+    void handleIsoDirRec(ArcFileInfo& archive, unsigned int size);
     std::list<t_arc_index> _archives;
     ArcIOStream _stream;
 };

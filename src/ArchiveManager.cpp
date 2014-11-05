@@ -8,10 +8,14 @@ namespace eastwood {
 
 namespace {
 
+//Mix constants
 const uint32_t ENCRYPTED = 0x00020000;
 
+//Iso constants
 const int ISO_BLKSIZE = 2048;
+const std::string ISO_ID = "CD001";
 
+//Blank arcfileinfo to return if not found
 ArcFileInfo BLANK = {0, 0, ARC_DIR, NULL, std::string()};
 
 }
@@ -113,8 +117,9 @@ size_t ArchiveManager::indexPak(std::string pakfile, bool usefind)
         rv = _archives.back().insert(entry);
         
         //if insertion failed, assume bad format.
-        if(!rv.second)
-            throw(Exception(LOG_ERROR, "ArchiveManager", "Invalid Pak format"));
+        if(!rv.second) {
+            LOG_WARNING("Could not index %s, likely a hash collision", name);
+        }
     }
     
     _stream.close();
@@ -128,7 +133,7 @@ size_t ArchiveManager::indexMix(std::string mixfile, bool usefind)
     uint16_t filecount;
     //std::string archivename;
     ArcFileInfo archive;
-    std::pair<t_arc_index_iter,bool> rv;
+    //std::pair<t_arc_index_iter,bool> rv;
     
     if(usefind) {
         archive = find(mixfile);
@@ -158,12 +163,17 @@ size_t ArchiveManager::indexMix(std::string mixfile, bool usefind)
     return _archives.size() - 1;
 }
 
+// based on info at http://wiki.osdev.org/ISO_9660
 size_t ArchiveManager::indexIso(std::string isofile, bool usefind)
 {
-    
+    std::string isoid;
     ArcFileInfo archive;
     t_arc_entry entry;
     std::pair<t_arc_index_iter,bool> rv;
+    unsigned int ptsize;
+    unsigned int ptoffset;
+    std::vector<unsigned int> diroffsets;
+    std::vector<unsigned int>::iterator dirit;
     
     if(usefind) {
         archive = find(isofile);
@@ -175,10 +185,58 @@ size_t ArchiveManager::indexIso(std::string isofile, bool usefind)
         archive.size = _stream.sizeg();
     }
     
+    //basic checks on if the file opened and is big enough
+    if(!_stream.is_open())
+        throw(Exception(LOG_ERROR, "ArchiveManager", "Could not open Iso"));
+    
+    if(_stream.sizeg() < 16 * ISO_BLKSIZE)
+        throw(Exception(LOG_ERROR, "ArchiveManager", "Invalid Iso format"));
+    
     //seek to start of ISO primary descriptor
     _stream.seekg(16 * ISO_BLKSIZE, std::ios_base::beg);
     
-    return 0;
+    //do some format checks
+    if(_stream.get() != 1)
+        throw(Exception(LOG_ERROR, "ArchiveManager", "Invalid Iso format"));
+    
+    isoid.resize(5);
+    _stream.read(&isoid.at(0), 5);
+    
+    if(isoid != ISO_ID) {
+        throw(Exception(LOG_ERROR, "ArchiveManager", "Invalid Iso format"));
+    }
+    
+    //path_table information
+    _stream.seekg(126, std::ios_base::cur);
+    ptsize = _stream.getU32LE();
+    _stream.ignore(4);
+    ptoffset = _stream.getU32LE();
+    
+    //seek to path table
+    _stream.seekg(ptoffset * ISO_BLKSIZE, std::ios_base::beg);
+    
+    //parse the info we need from the path table
+    while(ptsize) {
+        int len = _stream.get();
+        _stream.ignore(1);
+        diroffsets.push_back(_stream.getU32LE());
+        //skip bunch of info we don't care about
+        _stream.ignore(len - 6);
+        ptsize -= len;
+    }
+    
+    //lookup the directory record and parse it into our archive db
+    for(dirit = diroffsets.begin(); dirit != diroffsets.end(); dirit++) {
+        //seek to extent entry
+        _stream.seekg((*dirit * ISO_BLKSIZE) + 2, std::ios_base::beg);
+        unsigned int offset = _stream.getU32LE();
+        _stream.ignore(4);
+        unsigned int size = _stream.getU32LE();
+        _stream.seekg(offset * ISO_BLKSIZE, std::ios_base::beg);
+        handleIsoDirRec(archive, size);
+    }
+    
+    return _archives.size() - 1;
 }
 
 size_t ArchiveManager::indexIsz(std::string iszfile, bool usefind)
@@ -287,6 +345,62 @@ void ArchiveManager::handleEncrypted(ArcFileInfo& archive)
             throw(Exception(LOG_ERROR, "ArchiveManager", "Invalid Mix format"));
     }
 }
+
+
+void ArchiveManager::handleIsoDirRec(ArcFileInfo& archive, unsigned int size)
+{
+    t_arc_entry entry;
+    std::pair<t_arc_index_iter,bool> rv;
+    
+    //add new archive to the archive list
+    _archives.push_back(t_arc_index());
+    
+    for(unsigned int i = 0; i < size;) {
+        unsigned int reclen = _stream.get();
+        if(!reclen) {
+            LOG_DEBUG("ISO Handling spanned directory entry");
+            _stream.ignore(ISO_BLKSIZE - (i - 1));
+        }
+        _stream.ignore(1);
+        entry.second.start = _stream.getU32LE() * ISO_BLKSIZE;
+        _stream.ignore(4);
+        entry.second.size = _stream.getU32LE();
+        _stream.ignore(7);
+        //check if flags indicate this is a dir entry, handled by caller so skip
+        //also check if file is hidden, we don't care about it if so
+        uint8_t flag = _stream.get();
+        if(flag & 0x02 || flag & 0x01) {
+            _stream.ignore(reclen - 26);
+            i += reclen;
+            continue;
+        }
+        _stream.ignore(6);
+        
+        //get the filename
+        std::string fname;
+        //miss off teminator bytes
+        fname.resize(_stream.get() - 2);
+        _stream.read(&fname.at(0), fname.size());
+        LOG_DEBUG("Read filename of %s", fname.c_str());
+        
+        //finish creating our file entry
+        entry.first = idGen(fname);
+        entry.second.archivepath = archive.archivepath;
+        entry.second.type = ARC_ISO;
+        
+        rv = _archives.back().insert(entry);
+        
+        //if insertion failed, assume bad format.
+        if(!rv.second) {
+            LOG_WARNING("Could not index %s, likely a hash collision", fname.c_str());
+        }
+        
+        //move everything to where the next entry should be
+        _stream.ignore(reclen - (35 + fname.size()));
+        i += reclen;
+    }
+}
+
     
 //Generates the ID's found in mix files.
 int32_t ArchiveManager::idGen(std::string filename)
