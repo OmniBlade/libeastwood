@@ -206,32 +206,47 @@ size_t ArchiveManager::indexIso(std::string isofile, bool usefind)
         throw(Exception(LOG_ERROR, "ArchiveManager", "Invalid Iso format"));
     }
     
+    LOG_DEBUG("Iso id is %s", isoid.c_str());
+    
     //path_table information
-    _stream.seekg(126, std::ios_base::cur);
+    _stream.seekg(122, std::ios_base::cur);
+    unsigned int blksize = _stream.getU16LE();
+    _stream.ignore(2);
+    if(blksize != ISO_BLKSIZE){
+        LOG_DEBUG("Block size %u not as expected", blksize);
+        throw(Exception(LOG_ERROR, "ArchiveManager", "Iso format not handled"));
+    }
+    
     ptsize = _stream.getU32LE();
     _stream.ignore(4);
     ptoffset = _stream.getU32LE();
+    
+    LOG_DEBUG("ptsize %d, ptoffset %d", ptsize, ptoffset);
     
     //seek to path table
     _stream.seekg(ptoffset * ISO_BLKSIZE, std::ios_base::beg);
     
     //parse the info we need from the path table
-    while(ptsize) {
-        int len = _stream.get();
+    while(ptsize > 0) {
+        int idlen = _stream.get();
+        ptsize -= 8 + idlen + (idlen % 2);
         _stream.ignore(1);
         diroffsets.push_back(_stream.getU32LE());
         //skip bunch of info we don't care about
-        _stream.ignore(len - 6);
-        ptsize -= len;
+        _stream.ignore(2 + idlen + (idlen % 2));
     }
+    
+    LOG_DEBUG("There are %u directories to index", diroffsets.size());
     
     //lookup the directory record and parse it into our archive db
     for(dirit = diroffsets.begin(); dirit != diroffsets.end(); dirit++) {
         //seek to extent entry
         _stream.seekg((*dirit * ISO_BLKSIZE) + 2, std::ios_base::beg);
         unsigned int offset = _stream.getU32LE();
+        LOG_DEBUG("Dir entry %u", offset * ISO_BLKSIZE);
         _stream.ignore(4);
         unsigned int size = _stream.getU32LE();
+        LOG_DEBUG("Dir entry size %u", size);
         _stream.seekg(offset * ISO_BLKSIZE, std::ios_base::beg);
         handleIsoDirRec(archive, size);
     }
@@ -358,18 +373,21 @@ void ArchiveManager::handleIsoDirRec(ArcFileInfo& archive, unsigned int size)
     for(unsigned int i = 0; i < size;) {
         unsigned int reclen = _stream.get();
         if(!reclen) {
-            LOG_DEBUG("ISO Handling spanned directory entry");
             _stream.ignore(ISO_BLKSIZE - (i - 1));
+            i += ISO_BLKSIZE - (i - 1);
+            LOG_DEBUG("record pos %u against size %u", i, size);
+            if(i > size) break;
         }
         _stream.ignore(1);
         entry.second.start = _stream.getU32LE() * ISO_BLKSIZE;
         _stream.ignore(4);
         entry.second.size = _stream.getU32LE();
-        _stream.ignore(7);
+        _stream.ignore(11);
         //check if flags indicate this is a dir entry, handled by caller so skip
         //also check if file is hidden, we don't care about it if so
         uint8_t flag = _stream.get();
         if(flag & 0x02 || flag & 0x01) {
+            LOG_DEBUG("record is for a dir or hidden");
             _stream.ignore(reclen - 26);
             i += reclen;
             continue;
@@ -379,9 +397,9 @@ void ArchiveManager::handleIsoDirRec(ArcFileInfo& archive, unsigned int size)
         //get the filename
         std::string fname;
         //miss off teminator bytes
-        fname.resize(_stream.get() - 2);
+        fname.resize(_stream.get());
         _stream.read(&fname.at(0), fname.size());
-        LOG_DEBUG("Read filename of %s", fname.c_str());
+        //LOG_DEBUG("Read filename of %s", fname.c_str());
         
         //finish creating our file entry
         entry.first = idGen(fname);

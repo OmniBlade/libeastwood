@@ -229,7 +229,7 @@ protected:
         int pos = (direction == std::ios_base::beg) ? _soffset + offset :
                   (direction == std::ios_base::cur) ? ftell(_fp) + offset :
                                                       _eoffset + offset;
-
+        
         return fseek(_fp, pos, SEEK_SET) ? (-1) : pos - _soffset;
     }
     
