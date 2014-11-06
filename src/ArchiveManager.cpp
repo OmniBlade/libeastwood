@@ -14,10 +14,24 @@ const uint32_t ENCRYPTED = 0x00020000;
 //Iso constants
 const int ISO_BLKSIZE = 2048;
 const std::string ISO_ID = "CD001";
+const std::string indexdirs[] = {"INSTALL", "AUD1", "SETUP"};
+const int numdirs = 3;
 
 //Blank arcfileinfo to return if not found
 ArcFileInfo BLANK = {0, 0, ARC_DIR, NULL, std::string()};
 
+}
+
+bool matchdir(const std::string& dir)
+{
+    for(int i = 0; i < numdirs; i++){
+        if(indexdirs[i] == dir) {
+            LOG_DEBUG("Matching dirs true");
+            return true;
+        }
+    }
+    LOG_DEBUG("Matching dirs false");
+    return false;
 }
     
 size_t ArchiveManager::indexDir(std::string path)
@@ -145,8 +159,12 @@ size_t ArchiveManager::indexMix(std::string mixfile, bool usefind)
         archive.size = _stream.sizeg();
     }
     
-    if(!_stream.is_open())
+    LOG_DEBUG("Opened file");
+    
+    if(!_stream.is_open()) {
+        LOG_DEBUG("Couldn't open file");
         throw(Exception(LOG_ERROR, "ArchiveManager", "Could not open Mix"));
+    }
     
     flags = _stream.getU32LE();
     filecount = *reinterpret_cast<uint16_t*>(&flags);
@@ -206,8 +224,6 @@ size_t ArchiveManager::indexIso(std::string isofile, bool usefind)
         throw(Exception(LOG_ERROR, "ArchiveManager", "Invalid Iso format"));
     }
     
-    LOG_DEBUG("Iso id is %s", isoid.c_str());
-    
     //path_table information
     _stream.seekg(122, std::ios_base::cur);
     unsigned int blksize = _stream.getU16LE();
@@ -221,8 +237,6 @@ size_t ArchiveManager::indexIso(std::string isofile, bool usefind)
     _stream.ignore(4);
     ptoffset = _stream.getU32LE();
     
-    LOG_DEBUG("ptsize %d, ptoffset %d", ptsize, ptoffset);
-    
     //seek to path table
     _stream.seekg(ptoffset * ISO_BLKSIZE, std::ios_base::beg);
     
@@ -231,25 +245,32 @@ size_t ArchiveManager::indexIso(std::string isofile, bool usefind)
         int idlen = _stream.get();
         ptsize -= 8 + idlen + (idlen % 2);
         _stream.ignore(1);
-        diroffsets.push_back(_stream.getU32LE());
+        uint32_t offset = _stream.getU32LE();
         //skip bunch of info we don't care about
-        _stream.ignore(2 + idlen + (idlen % 2));
+        _stream.ignore(2);
+        std::string name;
+        name.resize(idlen);
+        _stream.read(&name.at(0), idlen);
+        _stream.ignore(idlen % 2);
+        if(idlen < 2 || matchdir(name)) {
+            diroffsets.push_back(offset);
+        }
     }
     
     LOG_DEBUG("There are %u directories to index", diroffsets.size());
-    
+    int i = 1;
     //lookup the directory record and parse it into our archive db
     for(dirit = diroffsets.begin(); dirit != diroffsets.end(); dirit++) {
         //seek to extent entry
         _stream.seekg((*dirit * ISO_BLKSIZE) + 2, std::ios_base::beg);
         unsigned int offset = _stream.getU32LE();
-        LOG_DEBUG("Dir entry %u", offset * ISO_BLKSIZE);
         _stream.ignore(4);
         unsigned int size = _stream.getU32LE();
-        LOG_DEBUG("Dir entry size %u", size);
         _stream.seekg(offset * ISO_BLKSIZE, std::ios_base::beg);
         handleIsoDirRec(archive, size);
     }
+    
+    _stream.close();
     
     return _archives.size() - 1;
 }
@@ -375,7 +396,6 @@ void ArchiveManager::handleIsoDirRec(ArcFileInfo& archive, unsigned int size)
         if(!reclen) {
             _stream.ignore(ISO_BLKSIZE - (i - 1));
             i += ISO_BLKSIZE - (i - 1);
-            LOG_DEBUG("record pos %u against size %u", i, size);
             if(i > size) break;
         }
         _stream.ignore(1);
@@ -387,7 +407,7 @@ void ArchiveManager::handleIsoDirRec(ArcFileInfo& archive, unsigned int size)
         //also check if file is hidden, we don't care about it if so
         uint8_t flag = _stream.get();
         if(flag & 0x02 || flag & 0x01) {
-            LOG_DEBUG("record is for a dir or hidden");
+            //LOG_DEBUG("record is for a dir or hidden");
             _stream.ignore(reclen - 26);
             i += reclen;
             continue;
@@ -447,7 +467,10 @@ ArcFileInfo& ArchiveManager::find(std::string filename)
     
     for(t_archive_iter it = _archives.begin(); it != _archives.end(); it++) {
         t_arc_index_iter info = it->find(id);
-        if(info != it->end()) return info->second;
+        if(info != it->end()) {
+            LOG_DEBUG("Entry is at %u, sized %u", info->second.start, info->second.size);
+            return info->second;
+        }
     }
     
     LOG_DEBUG("Couldn't find file of id %08x", id);

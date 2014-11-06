@@ -25,6 +25,8 @@ int main(int argc, char** argv)
     arcman.indexMix("ratest.mix", true);
     arcman.indexMix("rasub.mix", true);
     arcman.indexIso("gdi95.iso", true);
+    LOG_DEBUG("Indexing file on iso");
+    arcman.indexIso("cclocal.mix", true);
     ArcIStream infile;
     
     //string file & mix test
