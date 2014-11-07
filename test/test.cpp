@@ -9,7 +9,7 @@
 #include "eastwood/StringFile.h"
 #include "eastwood/ArcOStream.h"
 #include "eastwood/PalFile.h"
-#include "eastwood/WsaFile.h"
+#include "eastwood/DuneShpFile.h"
 #include "eastwood/AudFile.h"
 
 const char* mixes[] = {"tdtest.mix", "ratest.mix", "rasub.mix"};
@@ -25,8 +25,6 @@ int main(int argc, char** argv)
     arcman.indexMix("ratest.mix", true);
     arcman.indexMix("rasub.mix", true);
     arcman.indexIso("gdi95.iso", true);
-    LOG_DEBUG("Indexing file on iso");
-    arcman.indexIso("cclocal.mix", true);
     ArcIStream infile;
     
     //string file & mix test
@@ -38,14 +36,14 @@ int main(int argc, char** argv)
     infile.close();
     
     //image test
-    infile.open("temperat.pal", std::ios_base::in | std::ios_base::binary);
+    infile.open(arcman.find("temperat.pal"));
     PalFile cps(infile);
     infile.close();
     Palette palette = cps.getPalette();
-    infile.open("sov-tran.wsa", std::ios_base::in | std::ios_base::binary);
-    WsaFile shp(infile);
+    infile.open(arcman.find("mouse.shp"));
+    DuneShpFile shp(infile);
     LOG_DEBUG("Getting tmp tile frame");
-    Surface surf = shp[5].getSurface(shp.palette());
+    Surface surf = shp[5].getSurface(palette);
     ArcOStream outfile;
     outfile.open("testing.bmp", std::ios_base::out | std::ios_base::binary);
     if(outfile.is_open()){

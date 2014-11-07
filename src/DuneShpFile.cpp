@@ -178,7 +178,7 @@ void DuneShpFile::decodeFrame(std::istream &stream, uint16_t fileIndex)
     /* size and also checksum */
     imageSize = _stream.getU16LE();
 
-    LOG_INFO("ShpFile", "File Nr.: %d (Size: %dx%d)",fileIndex,width,height);
+    //LOG_INFO("ShpFile", "File Nr.: %d (Size: %dx%d)",fileIndex,width,height);
 
     switch(flags) {
 	case 0:

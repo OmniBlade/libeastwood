@@ -14,11 +14,16 @@ const uint32_t ENCRYPTED = 0x00020000;
 //Iso constants
 const int ISO_BLKSIZE = 2048;
 const std::string ISO_ID = "CD001";
+//This specializes the indexing of a CD to parts relevant to C&C games only
 const std::string indexdirs[] = {"INSTALL", "AUD1", "SETUP"};
 const int numdirs = 3;
 
+//InstallShield Constants
+const uint32_t ISZ_SIG = 0x8C655D13;
+const int32_t ISZ_DATASTART = 255;
+
 //Blank arcfileinfo to return if not found
-ArcFileInfo BLANK = {0, 0, ARC_DIR, NULL, std::string()};
+ArcFileInfo BLANK = {0, 0, 0, ARC_DIR, NULL, std::string()};
 
 }
 
@@ -30,7 +35,7 @@ bool matchdir(const std::string& dir)
             return true;
         }
     }
-    LOG_DEBUG("Matching dirs false");
+    //LOG_DEBUG("Matching dirs false");
     return false;
 }
     
@@ -69,7 +74,7 @@ size_t ArchiveManager::indexDir(std::string path)
         
         entry.first = idGen(dir->d_name);
         entry.second.archivepath = filepath;
-        entry.second.size = st.st_size;
+        entry.second.size = entry.second.cmpsize = st.st_size;
         entry.second.start = 0;
         entry.second.type = ARC_DIR;
         
@@ -125,7 +130,7 @@ size_t ArchiveManager::indexPak(std::string pakfile, bool usefind)
         
         entry.first = idGen(name);
         entry.second.start = start + archive.start;
-        entry.second.size = size;
+        entry.second.size = entry.second.cmpsize = size;
         entry.second.archivepath = archive.archivepath;
         entry.second.type = ARC_PAK;
         rv = _archives.back().insert(entry);
@@ -158,8 +163,6 @@ size_t ArchiveManager::indexMix(std::string mixfile, bool usefind)
         archive.start = 0;
         archive.size = _stream.sizeg();
     }
-    
-    LOG_DEBUG("Opened file");
     
     if(!_stream.is_open()) {
         LOG_DEBUG("Couldn't open file");
@@ -277,7 +280,58 @@ size_t ArchiveManager::indexIso(std::string isofile, bool usefind)
 
 size_t ArchiveManager::indexIsz(std::string iszfile, bool usefind)
 {
-    return 0;
+    uint32_t sig;
+    int32_t tocaddress;
+    uint16_t dircount;
+    std::streampos pretoc;
+    ArcFileInfo archive;
+    t_arc_entry entry;
+    std::pair<t_arc_index_iter,bool> rv;
+    
+    if(usefind) {
+        archive = find(iszfile);
+        _stream.open(archive);
+    } else {
+        _stream.open(iszfile.c_str(), std::ios_base::binary | std::ios_base::in);
+        archive.archivepath = iszfile;
+        archive.start = 0;
+        archive.size = _stream.sizeg();
+    }
+    
+    //basic checks on if the file opened
+    if(!_stream.is_open())
+        throw(Exception(LOG_ERROR, "ArchiveManager", "Could not open InstallShield file"));
+    
+    sig = _stream.getU32LE();
+    
+    //test if we have what we think we have
+    if(sig != ISZ_SIG)
+        throw(Exception(LOG_ERROR, "ArchiveManager", "Not a valid InstallShield 3 archive."));
+    
+    //get some basic info on where stuff is in file
+    _stream.seekg(37, std::ios_base::cur);
+    tocaddress = _stream.getU32LE();
+    _stream.seekg(4, std::ios_base::cur);
+    dircount = _stream.getU16LE();
+    
+    //find the toc and work out how many files we have in the archive
+    _stream.seekg(tocaddress, std::ios_base::beg);
+    
+    //Get offsets to files tables from the directory table
+    std::vector<uint32_t> dirfiles;
+    
+    for(uint32_t i = 0; i < dircount; i++) {
+        dirfiles.push_back(handleIszDirs());
+    }
+    
+    //parse the file entries in the toc to get filenames, size and location
+    for(uint32_t i = 0; i < dirfiles.size(); i++){
+            handleIszFiles(ArcFileInfo& archive, dirfiles[i]);
+    }
+    
+    _stream.close();
+    
+    return _archives.size() - 1;;
 }
 
 void ArchiveManager::handleUnEncrypted(ArcFileInfo& archive, uint16_t filecount)
@@ -305,7 +359,7 @@ void ArchiveManager::handleUnEncrypted(ArcFileInfo& archive, uint16_t filecount)
     for(uint32_t i = 0; i < filecount; i++) {
         entry.first = _stream.getU32LE();
         entry.second.start = _stream.getU32LE() + offset + archive.start;
-        entry.second.size = _stream.getU32LE();
+        entry.second.size = entry.second.cmpsize = _stream.getU32LE();
         entry.second.archivepath = archive.archivepath;
         entry.second.type = ARC_MIX;
         rv = _archives.back().insert(entry);
@@ -372,6 +426,7 @@ void ArchiveManager::handleEncrypted(ArcFileInfo& archive)
                pindbuf + 8 + i * 12, sizeof(int32_t));
         
         entry.second.start += offset;
+        entry.second.cmpsize = entry.second.size;
         entry.second.archivepath = archive.archivepath;
         entry.second.type = ARC_MIX;
         rv = _archives.back().insert(entry);
@@ -401,7 +456,7 @@ void ArchiveManager::handleIsoDirRec(ArcFileInfo& archive, unsigned int size)
         _stream.ignore(1);
         entry.second.start = _stream.getU32LE() * ISO_BLKSIZE;
         _stream.ignore(4);
-        entry.second.size = _stream.getU32LE();
+        entry.second.size = entry.second.cmpsize = _stream.getU32LE();
         _stream.ignore(11);
         //check if flags indicate this is a dir entry, handled by caller so skip
         //also check if file is hidden, we don't care about it if so
@@ -439,7 +494,28 @@ void ArchiveManager::handleIsoDirRec(ArcFileInfo& archive, unsigned int size)
     }
 }
 
+uint32_t ArchiveManager::handleIszDirs()
+{
+    uint16_t fcount = _stream.getU16LE();
+    uint16_t chksize = _stream.getU16LE();
+    uint16_t nlen = _stream.getU16LE();
     
+    LOG_DEBUG("We have %d files", fcount);
+
+    //skip the name of the dir, we just want the files
+    _stream.ignore(nlen);
+    
+    //skip to end of chunk
+    _stream.ignore(chksize - nlen - 6);
+
+    return fcount;
+}
+
+void ArchiveManager::handleIszFiles(ArcFileInfo& archive)
+{
+    
+}
+
 //Generates the ID's found in mix files.
 int32_t ArchiveManager::idGen(std::string filename)
 {
@@ -468,7 +544,7 @@ ArcFileInfo& ArchiveManager::find(std::string filename)
     for(t_archive_iter it = _archives.begin(); it != _archives.end(); it++) {
         t_arc_index_iter info = it->find(id);
         if(info != it->end()) {
-            LOG_DEBUG("Entry is at %u, sized %u", info->second.start, info->second.size);
+            LOG_DEBUG("Entry is at %u, sized %u, in archive %s", info->second.start, info->second.size, info->second.archivepath.c_str());
             return info->second;
         }
     }

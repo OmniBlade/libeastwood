@@ -6,6 +6,7 @@
 #include "IOStream.h"
 #include "DirEnt.h"
 #include "ArcFileInfo.h"
+#include "BlastStreamBuf.h"
 #include <vector>
 #include <list>
 #include <map>
@@ -38,6 +39,8 @@ private:
     void handleEncrypted(ArcFileInfo& archive);
     void handleUnEncrypted(ArcFileInfo& archive, uint16_t filecount);
     void handleIsoDirRec(ArcFileInfo& archive, unsigned int size);
+    void handleIszFiles(ArcFileInfo& archive, unsigned int size);
+    uint32_t handleIszDirs();
     std::list<t_arc_index> _archives;
     ArcIOStream _stream;
 };

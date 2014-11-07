@@ -4,6 +4,7 @@ INCLUDE_DIRECTORIES(${LIBEASTWOOD_SOURCE_DIR}/include)
 SET( LIBEASTWOOD_SRCS
   codec/adpcm.cpp
   codec/base64.cpp
+  codec/blast.cpp
   codec/format2.cpp
   codec/format40.cpp
   codec/format80.cpp
