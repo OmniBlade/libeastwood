@@ -326,7 +326,7 @@ size_t ArchiveManager::indexIsz(std::string iszfile, bool usefind)
     
     //parse the file entries in the toc to get filenames, size and location
     for(uint32_t i = 0; i < dirfiles.size(); i++){
-            handleIszFiles(ArcFileInfo& archive, dirfiles[i]);
+            handleIszFiles(archive, dirfiles[i]);
     }
     
     _stream.close();
@@ -511,9 +511,53 @@ uint32_t ArchiveManager::handleIszDirs()
     return fcount;
 }
 
-void ArchiveManager::handleIszFiles(ArcFileInfo& archive)
+void ArchiveManager::handleIszFiles(ArcFileInfo& archive, unsigned int size)
 {
+    t_arc_entry entry;
+    std::pair<t_arc_index_iter,bool> rv;
+    uint16_t chksize;
+    uint8_t namelen;
+    std::string fname;
+    unsigned dataoffset = ISZ_DATASTART;
     
+    //add new archive to the archive list
+    _archives.push_back(t_arc_index());
+    
+    for(unsigned int i = 0; i < size;) {
+        //get entry info and skip stuff we don't need
+        _stream.ignore(3);
+        entry.second.size = _stream.getU32LE();
+        entry.second.cmpsize = _stream.getU32LE();
+        //second 4 bytes here are date/time stamp, not needed for this
+        _stream.ignore(12);
+        //_stream.read(reinterpret_cast<char*>(&file.second.datetime) + 2, sizeof(uint16_t));
+        //_stream.read(reinterpret_cast<char*>(&file.second.datetime), sizeof(uint16_t));
+        chksize = _stream.getU16LE();
+        _stream.ignore(4);
+        namelen = _stream.get();
+
+        //read in file name, ensure null termination;
+        fname.resize(namelen);
+        _stream.read(&fname.at(0), namelen);
+        entry.first = idGen(fname);
+
+        //complete out file entry with the offset within the body.
+        entry.second.start = dataoffset;
+        //update offset for the following file
+        dataoffset += entry.second.cmpsize;
+        
+        entry.second.type = ARC_ISH;
+        
+        rv = _archives.back().insert(entry);
+        
+        //if insertion failed, assume bad format.
+        if(!rv.second) {
+            LOG_WARNING("Could not index %s, likely a hash collision", fname.c_str());
+        }
+
+        //skip to end of chunk
+        _stream.ignore(chksize - namelen - 30);
+    }
 }
 
 //Generates the ID's found in mix files.
