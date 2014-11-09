@@ -23,7 +23,7 @@ const uint32_t ISZ_SIG = 0x8C655D13;
 const int32_t ISZ_DATASTART = 255;
 
 //Blank arcfileinfo to return if not found
-ArcFileInfo BLANK = {0, 0, 0, ARC_DIR, NULL, std::string()};
+ArcFileInfo BLANK = {0, 0, 0, false, ARC_DIR, NULL, std::string()};
 
 }
 
@@ -74,7 +74,7 @@ size_t ArchiveManager::indexDir(std::string path)
         
         entry.first = idGen(dir->d_name);
         entry.second.archivepath = filepath;
-        entry.second.size = entry.second.cmpsize = st.st_size;
+        entry.second.size = entry.second.decmpsize = st.st_size;
         entry.second.start = 0;
         entry.second.type = ARC_DIR;
         
@@ -130,7 +130,7 @@ size_t ArchiveManager::indexPak(std::string pakfile, bool usefind)
         
         entry.first = idGen(name);
         entry.second.start = start + archive.start;
-        entry.second.size = entry.second.cmpsize = size;
+        entry.second.size = entry.second.decmpsize = size;
         entry.second.archivepath = archive.archivepath;
         entry.second.type = ARC_PAK;
         rv = _archives.back().insert(entry);
@@ -313,6 +313,7 @@ size_t ArchiveManager::indexIsz(std::string iszfile, bool usefind)
     tocaddress = _stream.getU32LE();
     _stream.seekg(4, std::ios_base::cur);
     dircount = _stream.getU16LE();
+    LOG_DEBUG("ISH dir count %d", dircount);
     
     //find the toc and work out how many files we have in the archive
     _stream.seekg(tocaddress, std::ios_base::beg);
@@ -359,7 +360,7 @@ void ArchiveManager::handleUnEncrypted(ArcFileInfo& archive, uint16_t filecount)
     for(uint32_t i = 0; i < filecount; i++) {
         entry.first = _stream.getU32LE();
         entry.second.start = _stream.getU32LE() + offset + archive.start;
-        entry.second.size = entry.second.cmpsize = _stream.getU32LE();
+        entry.second.size = entry.second.decmpsize = _stream.getU32LE();
         entry.second.archivepath = archive.archivepath;
         entry.second.type = ARC_MIX;
         rv = _archives.back().insert(entry);
@@ -426,7 +427,7 @@ void ArchiveManager::handleEncrypted(ArcFileInfo& archive)
                pindbuf + 8 + i * 12, sizeof(int32_t));
         
         entry.second.start += offset;
-        entry.second.cmpsize = entry.second.size;
+        entry.second.decmpsize = entry.second.size;
         entry.second.archivepath = archive.archivepath;
         entry.second.type = ARC_MIX;
         rv = _archives.back().insert(entry);
@@ -456,7 +457,7 @@ void ArchiveManager::handleIsoDirRec(ArcFileInfo& archive, unsigned int size)
         _stream.ignore(1);
         entry.second.start = _stream.getU32LE() * ISO_BLKSIZE;
         _stream.ignore(4);
-        entry.second.size = entry.second.cmpsize = _stream.getU32LE();
+        entry.second.size = entry.second.decmpsize = _stream.getU32LE();
         _stream.ignore(11);
         //check if flags indicate this is a dir entry, handled by caller so skip
         //also check if file is hidden, we don't care about it if so
@@ -517,17 +518,16 @@ void ArchiveManager::handleIszFiles(ArcFileInfo& archive, unsigned int size)
     std::pair<t_arc_index_iter,bool> rv;
     uint16_t chksize;
     uint8_t namelen;
-    std::string fname;
     unsigned dataoffset = ISZ_DATASTART;
     
     //add new archive to the archive list
     _archives.push_back(t_arc_index());
     
-    for(unsigned int i = 0; i < size;) {
+    for(unsigned int i = 0; i < size; i++) {
         //get entry info and skip stuff we don't need
         _stream.ignore(3);
+        entry.second.decmpsize = _stream.getU32LE();
         entry.second.size = _stream.getU32LE();
-        entry.second.cmpsize = _stream.getU32LE();
         //second 4 bytes here are date/time stamp, not needed for this
         _stream.ignore(12);
         //_stream.read(reinterpret_cast<char*>(&file.second.datetime) + 2, sizeof(uint16_t));
@@ -535,7 +535,8 @@ void ArchiveManager::handleIszFiles(ArcFileInfo& archive, unsigned int size)
         chksize = _stream.getU16LE();
         _stream.ignore(4);
         namelen = _stream.get();
-
+        std::string fname;
+        
         //read in file name, ensure null termination;
         fname.resize(namelen);
         _stream.read(&fname.at(0), namelen);
@@ -544,9 +545,10 @@ void ArchiveManager::handleIszFiles(ArcFileInfo& archive, unsigned int size)
         //complete out file entry with the offset within the body.
         entry.second.start = dataoffset;
         //update offset for the following file
-        dataoffset += entry.second.cmpsize;
+        dataoffset += entry.second.size;
         
         entry.second.type = ARC_ISH;
+        entry.second.archivepath = archive.archivepath;
         
         rv = _archives.back().insert(entry);
         
