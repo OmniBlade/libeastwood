@@ -15,7 +15,8 @@ struct ArcFileInfo
 { 
     int start;
     int size;
-    int cmpsize;
+    int decmpsize;
+    bool write;
     arctype type;
     char* cache;
     std::string archivepath;

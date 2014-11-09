@@ -1,4 +1,5 @@
 #include "eastwood/ArcIStream.h"
+#include "eastwood/ShieldIStream.h"
 #include "eastwood/ArchiveManager.h"
 #include "eastwood/Log.h"
 #include "eastwood/IniFile.h"
@@ -24,8 +25,20 @@ int main(int argc, char** argv)
     arcman.indexDir(".");
     arcman.indexMix("ratest.mix", true);
     arcman.indexMix("rasub.mix", true);
-    arcman.indexIso("gdi95.iso", true);
+    //arcman.indexIso("gdi95.iso", true);
+    arcman.indexIsz("SETUP.Z");
     ArcIStream infile;
+    ShieldIStream shield;
+    ArcOStream outfile;
+        
+    shield.open(arcman.find("soledisk.mix"));
+    if(shield.is_open()) {
+        LOG_DEBUG("file from setup.z opened, size %u", shield.sizeg());
+        outfile.open("test.mix", std::ios_base::binary);
+        outfile << shield.rdbuf();
+        outfile.close();
+        shield.close();
+    }
     
     //string file & mix test
     infile.open(arcman.find("setup.dip"));
@@ -44,7 +57,6 @@ int main(int argc, char** argv)
     DuneShpFile shp(infile);
     LOG_DEBUG("Getting tmp tile frame");
     Surface surf = shp[5].getSurface(palette);
-    ArcOStream outfile;
     outfile.open("testing.bmp", std::ios_base::out | std::ios_base::binary);
     if(outfile.is_open()){
             LOG_INFO("Out stream is open");

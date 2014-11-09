@@ -23,7 +23,7 @@ public:
     
     basic_arcistream(FILE* fp = NULL) :
     base_type(new sbuf_type(fp))
-    {}
+    {}  
     
     basic_arcistream(bbuf_type* sb) :
     base_type(reinterpret_cast<sbuf_type*>(sb))
@@ -52,7 +52,7 @@ public:
     {
         sbuf_type* buf = static_cast<sbuf_type*>(this->rdbuf());
         if (!(buf->open(fileinfo)))
-        this->setstate(std::ios_base::badbit);
+            this->setstate(std::ios_base::badbit);
     }
     
     void close()

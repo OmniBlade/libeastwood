@@ -42,29 +42,32 @@ public:
     
     typedef basic_blaststream <char_type, traits_type> this_type;
     
-    basic_blaststream(std::vector<char>& source, int size) 
-        :_buffer(NULL), _bufsize(size), _inputinfo(source.size(), NULL)
+    basic_blaststream(std::vector<char>* source, int size) 
+        :_buffer(NULL), _bufsize(size), _inputinfo(source->size(), NULL)
     {
-        _buffer = new char[_bufsize];
-        char* end = _buffer + _bufsize;
-        char* decomp = _buffer;
-        _inputinfo.inputbuf = &source.at(0);
-        int rv = codec::blast(infbuf, &_inputinfo, outf, &decomp);
-        
-        //handle if decompression fails.
-        if(rv != 0) {
-            delete[] _buffer;
-            _buffer = NULL;
-            _bufsize = 0;
-        } else {
-            this->setg(_buffer, _buffer, end);
+        if(!source->empty()) {
+            _buffer = new char[_bufsize];
+            char* end = _buffer + _bufsize;
+            char* decomp = _buffer;
+            _inputinfo.inputbuf = &source->at(0);
+            int rv = codec::blast(infbuf, &_inputinfo, outf, &decomp);
+
+            //handle if decompression fails.
+            if(rv != 0) {
+                delete[] _buffer;
+                _buffer = NULL;
+                _bufsize = 0;
+            } else {
+                this->setg(_buffer, _buffer, end);
+            }
         }
     }
     
     basic_blaststream(ArcFileInfo& fileinfo) 
-        :_buffer(NULL), _bufsize(fileinfo.size), _inputinfo(fileinfo.cmpsize, fileinfo.cache)
+        :_buffer(NULL), _bufsize(fileinfo.decmpsize), _inputinfo(fileinfo.size, fileinfo.cache)
     {
-        ArcIStream stream(fileinfo);
+        ArcIStream stream;
+        stream.open(fileinfo);
         _buffer = new char[_bufsize];
         char* end = _buffer + _bufsize;
         //this pointer is for the blast implementation to use to write to _buffer
@@ -85,7 +88,24 @@ public:
     
     this_type* open(ArcFileInfo& fileinfo)
     {
-        if(!fileinfo.cmpsize) return NULL;
+        if(!fileinfo.size) return NULL;
+        
+        _bufsize = fileinfo.size;
+        ArcIStream stream(fileinfo);
+        _buffer = new char[_bufsize];
+        char* end = _buffer + _bufsize;
+        //this pointer is for the blast implementation to use to write to _buffer
+        char* decomp = _buffer;
+        int rv = codec::blast(infstream, &stream, outf, &decomp);
+        
+        //handle if decompression fails.
+        if(rv != 0) {
+            delete[] _buffer;
+            _buffer = NULL;
+            _bufsize = 0;
+        } else {
+            this->setg(_buffer, _buffer, end);
+        }
         
         return this;
     }
