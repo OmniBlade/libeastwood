@@ -30,10 +30,10 @@ int main(int argc, char** argv)
     ArcIStream infile;
     ShieldIStream shield;
     ArcOStream outfile;
-        
+    
+    LOG_DEBUG("Opening blast stream");
     shield.open(arcman.find("soledisk.mix"));
     if(shield.is_open()) {
-        LOG_DEBUG("file from setup.z opened, size %u", shield.sizeg());
         outfile.open("test.mix", std::ios_base::binary);
         outfile << shield.rdbuf();
         outfile.close();

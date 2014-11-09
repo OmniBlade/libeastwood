@@ -309,9 +309,9 @@ size_t ArchiveManager::indexIsz(std::string iszfile, bool usefind)
         throw(Exception(LOG_ERROR, "ArchiveManager", "Not a valid InstallShield 3 archive."));
     
     //get some basic info on where stuff is in file
-    _stream.seekg(37, std::ios_base::cur);
+    _stream.ignore(37);
     tocaddress = _stream.getU32LE();
-    _stream.seekg(4, std::ios_base::cur);
+    _stream.ignore(4);
     dircount = _stream.getU16LE();
     LOG_DEBUG("ISH dir count %d", dircount);
     
@@ -455,7 +455,7 @@ void ArchiveManager::handleIsoDirRec(ArcFileInfo& archive, unsigned int size)
             if(i > size) break;
         }
         _stream.ignore(1);
-        entry.second.start = _stream.getU32LE() * ISO_BLKSIZE;
+        entry.second.start = (_stream.getU32LE() * ISO_BLKSIZE) + archive.start;
         _stream.ignore(4);
         entry.second.size = entry.second.decmpsize = _stream.getU32LE();
         _stream.ignore(11);
@@ -518,7 +518,7 @@ void ArchiveManager::handleIszFiles(ArcFileInfo& archive, unsigned int size)
     std::pair<t_arc_index_iter,bool> rv;
     uint16_t chksize;
     uint8_t namelen;
-    unsigned dataoffset = ISZ_DATASTART;
+    unsigned dataoffset = ISZ_DATASTART + archive.start;
     
     //add new archive to the archive list
     _archives.push_back(t_arc_index());

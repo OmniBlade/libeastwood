@@ -5,13 +5,11 @@
 #include "eastwood/Log.h"
 #include "eastwood/StdDef.h"
 #include "eastwood/codec/blast.h"
-#include "eastwood/ArcIStream.h"
 
 #include <streambuf>
-//#include <vector>
+#include <vector>
 #include <string>
-//#include <cstdio>
-//#include <iostream>
+#include <cstdio>
 
 namespace eastwood {
 
@@ -42,16 +40,25 @@ public:
     
     typedef basic_blaststream <char_type, traits_type> this_type;
     
-    basic_blaststream(std::vector<char>* source, int size) 
-        :_buffer(NULL), _bufsize(size), _inputinfo(source->size(), NULL)
+    basic_blaststream() 
+        :_buffer(NULL), _bufsize(0), _inputinfo()
+    {}
+    
+    ~basic_blaststream() { this->close(); }
+    
+    this_type* open(ArcFileInfo& fileinfo)
     {
-        if(!source->empty()) {
+        if(!fileinfo.size && fileinfo.type != ARC_ISH) return NULL;
+        
+        _bufsize = fileinfo.decmpsize;
+        FILE* ifh = fopen(fileinfo.archivepath.c_str(), "rb");
+        if(ifh != NULL) {
+            fseek(ifh, fileinfo.start, SEEK_SET);
             _buffer = new char[_bufsize];
             char* end = _buffer + _bufsize;
+            //this pointer is for the blast implementation to use to write to _buffer
             char* decomp = _buffer;
-            _inputinfo.inputbuf = &source->at(0);
-            int rv = codec::blast(infbuf, &_inputinfo, outf, &decomp);
-
+            int rv = codec::blast(infstream, ifh, outf, &decomp);
             //handle if decompression fails.
             if(rv != 0) {
                 delete[] _buffer;
@@ -60,54 +67,11 @@ public:
             } else {
                 this->setg(_buffer, _buffer, end);
             }
-        }
-    }
-    
-    basic_blaststream(ArcFileInfo& fileinfo) 
-        :_buffer(NULL), _bufsize(fileinfo.decmpsize), _inputinfo(fileinfo.size, fileinfo.cache)
-    {
-        ArcIStream stream;
-        stream.open(fileinfo);
-        _buffer = new char[_bufsize];
-        char* end = _buffer + _bufsize;
-        //this pointer is for the blast implementation to use to write to _buffer
-        char* decomp = _buffer;
-        int rv = codec::blast(infstream, &stream, outf, &decomp);
-        
-        //handle if decompression fails.
-        if(rv != 0) {
-            delete[] _buffer;
-            _buffer = NULL;
-            _bufsize = 0;
-        } else {
-            this->setg(_buffer, _buffer, end);
-        }
-    }
-    
-    ~basic_blaststream() { this->close(); }
-    
-    this_type* open(ArcFileInfo& fileinfo)
-    {
-        if(!fileinfo.size) return NULL;
-        
-        _bufsize = fileinfo.size;
-        ArcIStream stream(fileinfo);
-        _buffer = new char[_bufsize];
-        char* end = _buffer + _bufsize;
-        //this pointer is for the blast implementation to use to write to _buffer
-        char* decomp = _buffer;
-        int rv = codec::blast(infstream, &stream, outf, &decomp);
-        
-        //handle if decompression fails.
-        if(rv != 0) {
-            delete[] _buffer;
-            _buffer = NULL;
-            _bufsize = 0;
-        } else {
-            this->setg(_buffer, _buffer, end);
+
+            return this;
         }
         
-        return this;
+        return NULL;
     }
     
     this_type* close()
@@ -154,7 +118,7 @@ protected:
             nread = n - ((this->gptr() + n) - this->egptr());
         }
         
-        memcpy(dest, *(this->gptr()), nread);
+        memcpy(dest, reinterpret_cast<const void*>(*(this->gptr())), nread);
         this->gbump(nread);
         
         return nread;
@@ -190,12 +154,13 @@ private:
     static unsigned infbuf(void *how, unsigned char **buf)
     {
         blastinfo* info = static_cast<blastinfo*>(how);
-        *buf = info->inputbuf;
+        *buf = reinterpret_cast<unsigned char*>(info->inputbuf);
         return info->inputbuf != NULL ? info->inputsize : 0;
     }
     
     static unsigned infstream(void *how, unsigned char **buf)
     {
+        /*
         unsigned count;
         unsigned char hold[BLAST_CHUNK];
         *buf = hold;
@@ -205,18 +170,24 @@ private:
             if(stream->eof()) return count;
             hold[count] = stream->get();
         }
+        */
         
-        return BLAST_CHUNK;
+        static unsigned char hold[BLAST_CHUNK];
+
+        *buf = hold;
+        return fread(hold, 1, BLAST_CHUNK, (FILE *)how);
+        
+        //return BLAST_CHUNK;
         //return fread(hold, 1, BLAST_CHUNK, (FILE *)how);
     }
     
     //how will be passed a pointer to the pointer to our output buffer
     static int outf(void *how, unsigned char *buf, unsigned len)
     {
-        char** outbuf = static_cast<char**>(how);
+        char** outbuf = reinterpret_cast<char**>(how);
         bool rv = memcpy(*outbuf, buf, len) != NULL;
         *outbuf += len;
-        return rv;
+        return rv == NULL;
     }
     
 };

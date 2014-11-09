@@ -3,6 +3,7 @@
 
 #include "IStream.h"
 #include "BlastStreamBuf.h"
+#include "Log.h"
 
 #include "eastwood/StdDef.h"
 
@@ -22,7 +23,7 @@ public:
     typedef basic_eastistream           <char_type, traits_type>  base_type;
     
     basic_shieldistream(std::vector<char>* source = NULL, int size = 0) :
-    base_type(new sbuf_type(source, size))
+    base_type(new sbuf_type())
     {}  
     
     basic_shieldistream(bbuf_type* sb) :
@@ -37,10 +38,9 @@ public:
     base_type(new sbuf_type(fileinfo))
     {}
     
-    void open(ArcFileInfo& fileinfo) 
+    void open(ArcFileInfo& fileinfo)
     {
         if(fileinfo.type == ARC_ISH){
-            LOG_DEBUG("opening file from InstallShield Archive");
             sbuf_type* buf = static_cast<sbuf_type*>(this->rdbuf());
             if (!(buf->open(fileinfo)))
                 this->setstate(std::ios_base::badbit);
@@ -66,8 +66,8 @@ public:
     }
 };
 
-typedef basic_arcistream<char>  shieldistream;
-typedef basic_arcistream<char>  ShieldIStream;
+typedef basic_shieldistream<char>  shieldistream;
+typedef basic_shieldistream<char>  ShieldIStream;
 
 }
 
